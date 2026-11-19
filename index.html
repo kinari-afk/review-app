@@ -11,53 +11,78 @@
     --gold: #c9a227;
     --bg: #f5f6fa;
     --card: #ffffff;
-    --text: #222;
-    --muted: #666;
+    --text: #1a1a1a;
+    --muted: #4b5060;   /* 補足文の色。薄すぎると読みにくいので濃いめ */
+    --line: #c9cede;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--bg); color: var(--text);
     font-family: -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
-    line-height: 1.7;
+    font-size: 17px; line-height: 1.75;
   }
   header {
     background: var(--navy); color: #fff; text-align: center;
-    padding: 20px 16px 16px;
+    padding: 22px 16px 18px;
   }
-  header .brand { font-size: 13px; letter-spacing: .1em; color: var(--gold); }
-  header h1 { margin: 4px 0 0; font-size: 20px; }
+  header .brand { font-size: 14px; letter-spacing: .1em; color: var(--gold); }
+  header h1 { margin: 4px 0 0; font-size: 24px; }
   main { max-width: 480px; margin: 0 auto; padding: 16px; }
   .card {
-    background: var(--card); border-radius: 14px; padding: 20px 18px;
-    margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    background: var(--card); border-radius: 16px; padding: 22px 18px;
+    margin-bottom: 18px; box-shadow: 0 2px 6px rgba(0,0,0,.08);
   }
-  .card h2 { font-size: 17px; margin: 0 0 8px; color: var(--navy); }
-  .muted { color: var(--muted); font-size: 14px; }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+  /* 見出し：番号つきで、今どの手順かが一目でわかるように */
+  .card h2 {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 20px; line-height: 1.4; margin: 0 0 12px; color: var(--navy);
+  }
+  .num {
+    flex: none; width: 32px; height: 32px; border-radius: 50%;
+    background: var(--gold); color: #fff; font-size: 17px;
+    display: grid; place-items: center;
+  }
+  .muted { color: var(--muted); font-size: 16px; margin: 0; }
+  /* 選択肢グループの見出し */
+  .label {
+    margin: 22px 0 10px; padding-left: 10px; border-left: 4px solid var(--gold);
+    font-size: 17px; font-weight: bold; color: var(--navy); line-height: 1.3;
+  }
+  .label small { font-weight: normal; color: var(--muted); font-size: 14px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
   .chip {
-    border: 1px solid #ccd; background: #fff; border-radius: 999px;
-    padding: 8px 14px; font-size: 14px; cursor: pointer;
+    min-height: 46px; padding: 9px 16px; font-size: 16px; line-height: 1.3;
+    border: 2px solid var(--line); background: #fff; color: var(--text);
+    border-radius: 999px; cursor: pointer; font-family: inherit;
   }
-  .chip.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .chip.on { background: var(--navy); color: #fff; border-color: var(--navy); font-weight: bold; }
+  .chip.on::before { content: "✓ "; }   /* 色だけでなく記号でも選択がわかるように */
+  /* 「印象に残ったこと」は数が多いので2列のマス目に並べる */
+  .chips.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .chips.grid .chip { border-radius: 12px; padding: 10px 8px; font-size: 15.5px; text-align: center; white-space: nowrap; }
   textarea {
-    width: 100%; min-height: 200px; font-size: 16px; padding: 12px;
-    border: 1px solid #ccd; border-radius: 10px; resize: vertical;
-    font-family: inherit;
+    width: 100%; min-height: 220px; margin-top: 8px; padding: 14px;
+    font-size: 17px; line-height: 1.75; font-family: inherit;
+    border: 2px solid var(--line); border-radius: 12px; resize: vertical;
   }
+  textarea:focus { outline: none; border-color: var(--navy); }
   .btn {
-    display: block; width: 100%; padding: 16px; border: 0; border-radius: 12px;
-    background: #1a73e8; color: #fff; font-size: 17px; font-weight: bold;
+    display: block; width: 100%; padding: 19px; border: 0; border-radius: 14px;
+    background: #1a73e8; color: #fff; font-size: 20px; font-weight: bold;
     cursor: pointer; text-align: center; text-decoration: none;
+    box-shadow: 0 4px 10px rgba(26,115,232,.35);
   }
   .btn:active { opacity: .85; }
-  .steps { padding-left: 20px; margin: 8px 0 0; font-size: 14px; }
+  .steps { padding-left: 22px; margin: 4px 0 0; font-size: 16px; }
+  .steps li { margin-bottom: 6px; }
+  .steps b { color: var(--navy); }
   .toast {
     position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
-    background: #333; color: #fff; padding: 10px 18px; border-radius: 999px;
-    font-size: 14px; opacity: 0; transition: opacity .3s; pointer-events: none;
+    background: #333; color: #fff; padding: 12px 20px; border-radius: 999px;
+    font-size: 16px; opacity: 0; transition: opacity .3s; pointer-events: none;
   }
   .toast.show { opacity: 1; }
-  footer { text-align: center; font-size: 12px; color: var(--muted); padding: 8px 16px 32px; }
+  footer { text-align: center; font-size: 14px; color: var(--muted); padding: 8px 16px 36px; }
 </style>
 </head>
 <body>
@@ -70,7 +95,7 @@
 <main>
   <!-- ① お礼 -->
   <section class="card">
-    <h2>本日はご来店ありがとうございました</h2>
+    <h2>本日はご来店<br>ありがとうございました</h2>
     <p class="muted">
       よろしければ、本日のご感想をGoogleマップに投稿していただけないでしょうか。
       良かった点も、改善してほしい点も、率直なご意見がスタッフの励みと改善につながります。
@@ -79,28 +104,29 @@
 
   <!-- ② 書くときのヒント（任意） -->
   <section class="card">
-    <h2>書くときのヒント（任意）</h2>
-    <p class="muted">当てはまるものをタップすると、下の欄に文章の下書きができます。ご自身の言葉で一言足したり、自由に書き換えたりしてください。</p>
+    <h2><span class="num">1</span>当てはまるものをタップ</h2>
+    <p class="muted">下の欄に文章の下書きができます。ご自身の言葉で一言足したり、自由に書き換えたりしてください。（任意）</p>
 
-    <div class="muted" style="margin-top:8px">ご利用は</div>
+    <div class="label">ご利用は</div>
     <div class="chips" data-group="visit"></div>
 
-    <div class="muted" style="margin-top:8px">お売りいただいた品物</div>
+    <div class="label">お売りいただいた品物 <small>（いくつでも）</small></div>
     <div class="chips" data-group="item"></div>
 
-    <div class="muted" style="margin-top:8px">印象に残ったこと</div>
-    <div class="chips" data-group="point"></div>
+    <div class="label">印象に残ったこと <small>（いくつでも）</small></div>
+    <div class="chips grid" data-group="point"></div>
 
+    <div class="label">ご感想（自由に編集できます）</div>
     <textarea id="review" placeholder="例）初めて利用しましたが、査定の理由を一つずつ説明してもらえて安心できました。"></textarea>
   </section>
 
   <!-- ③ Googleへ -->
   <section class="card">
-    <h2>Googleで投稿する</h2>
+    <h2><span class="num">2</span>Googleで投稿する</h2>
     <ol class="steps">
-      <li>下のボタンを押すと、上の文章がコピーされ、Googleの投稿画面が開きます</li>
-      <li>星の数を選び、本文の欄を長押しして「ペースト」</li>
-      <li>「投稿」を押して完了です</li>
+      <li>下のボタンを押すと、文章がコピーされ、<b>Googleの投稿画面</b>が開きます</li>
+      <li><b>星の数</b>を選び、本文の欄を長押しして<b>「ペースト」</b></li>
+      <li><b>「投稿」</b>を押して完了です</li>
     </ol>
     <p style="margin:16px 0 0">
       <a class="btn" id="goGoogle" href="#">Googleで口コミを書く</a>
@@ -128,19 +154,28 @@ const CONFIG = {
     "お酒", "金券・商品券", "骨董品", "着物", "食器・陶磁器", "スマホ・カメラ", "その他",
   ],
   // 印象に残ったこと：ボタンの文字 → 文の途中の形（mid）と、文末の形（end）
+  // ★ 画面にはこの並び順のまま表示される。選んでほしいものほど上に書く。
   // 文頭に来たときは「〜も」が自動で「〜が」に変わる（FIRST_SUBJECTS を参照）
   points: [
-    { label: "査定の説明が丁寧",       mid: "査定の内容を一つずつ丁寧に説明していただき", end: "査定の内容を一つずつ丁寧に説明していただけました" },
-    { label: "査定がスピーディー",     mid: "査定もスピーディーで",                     end: "査定もスピーディーでした" },
-    { label: "スタッフの対応が親切",   mid: "スタッフの方の対応も親切で",               end: "スタッフの方の対応も親切でした" },
-    { label: "気軽に相談できた",       mid: "わからないことも気軽に相談でき",           end: "わからないことも気軽に相談できました" },
-    { label: "無理に勧められない",     mid: "売るよう無理に勧められることもなく",       end: "売るよう無理に勧められることもなく安心でした" },
-    { label: "少量でも快く査定",       mid: "少しの量でも快く査定していただき",         end: "少しの量でも快く査定していただけました" },
-    { label: "古い物・傷のある物も査定", mid: "古い物や傷のある物も一つずつ見ていただき", end: "古い物や傷のある物も一つずつ見ていただけました" },
-    { label: "想像より高く売れた",     mid: "思っていたより高い金額をつけていただき",     end: "思っていたより高い金額がついて嬉しかったです" },
-    { label: "他店より高かった",       mid: "他のお店よりも高い金額を提示していただき",   end: "他のお店よりも高い金額を提示していただけました" },
+    // --- 上位：お店として特に伝わってほしいこと ---
+    { label: "説明が丁寧",       mid: "査定の内容を一つずつ丁寧に説明していただき", end: "査定の内容を一つずつ丁寧に説明していただけました" },
+    { label: "対応が親切",   mid: "スタッフの方の対応も親切で",               end: "スタッフの方の対応も親切でした" },
+    { label: "想像より高額",     mid: "思っていたより高い金額をつけていただき",     end: "思っていたより高い金額がついて嬉しかったです" },
+    { label: "相談しやすい",       mid: "わからないことも気軽に相談でき",           end: "わからないことも気軽に相談できました" },
+    { label: "無理に勧めない",     mid: "売るよう無理に勧められることもなく",       end: "売るよう無理に勧められることもなく安心でした" },
+    { label: "扱いが丁寧", mid: "大切な品物を丁寧に扱っていただき",         end: "大切な品物を丁寧に扱っていただけました" },
+    { label: "相場がわかった",     mid: "相場についてわかりやすく教えていただき",     end: "相場についてわかりやすく教えていただけました" },
+    // --- 中位 ---
+    { label: "査定が早い",     mid: "査定もスピーディーで",                     end: "査定もスピーディーでした" },
+    { label: "その場で支払い",     mid: "その場ですぐに支払っていただき",           end: "その場ですぐに支払っていただけて助かりました" },
+    { label: "査定だけでもOK",   mid: "査定だけのつもりでも快く対応していただき",   end: "査定だけのつもりでも快く対応していただけました" },
+    { label: "遺品整理の相談", mid: "家族の遺品や整理品についても親身に相談に乗っていただき", end: "家族の遺品や整理品についても親身に相談に乗っていただけました" },
+    { label: "少量でもOK",       mid: "少しの量でも快く査定していただき",         end: "少しの量でも快く査定していただけました" },
+    { label: "古い物も査定", mid: "古い物や傷のある物も一つずつ見ていただき", end: "古い物や傷のある物も一つずつ見ていただけました" },
+    { label: "他店より高い",       mid: "他のお店よりも高い金額を提示していただき",   end: "他のお店よりも高い金額を提示していただけました" },
+    // --- 下位：お店の環境 ---
     { label: "待ち時間が短い",         mid: "待ち時間も短く",                         end: "待ち時間も短くて助かりました" },
-    { label: "入りやすい雰囲気",       mid: "お店も入りやすい雰囲気で",                 end: "お店も入りやすい雰囲気でした" },
+    { label: "入りやすい",       mid: "お店も入りやすい雰囲気で",                 end: "お店も入りやすい雰囲気でした" },
     { label: "店内が清潔",             mid: "店内も清潔で",                           end: "店内も清潔で気持ちよかったです" },
   ],
 };
@@ -208,7 +243,15 @@ function refresh() {
   }
   lastGenerated = buildText(selected);
   textarea.value = lastGenerated;
+  fitHeight();
 }
+
+// 入力欄を文章の長さに合わせて伸ばす（スクロールしなくても全文が読めるように）
+function fitHeight() {
+  textarea.style.height = "auto";
+  textarea.style.height = Math.max(220, textarea.scrollHeight + 4) + "px";
+}
+textarea.addEventListener("input", fitHeight);
 
 function makeChips(group, labels, single) {
   const box = document.querySelector(`.chips[data-group="${group}"]`);
