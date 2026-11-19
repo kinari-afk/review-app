@@ -40,7 +40,7 @@
   }
   .chip.on { background: var(--navy); color: #fff; border-color: var(--navy); }
   textarea {
-    width: 100%; min-height: 140px; font-size: 16px; padding: 12px;
+    width: 100%; min-height: 200px; font-size: 16px; padding: 12px;
     border: 1px solid #ccd; border-radius: 10px; resize: vertical;
     font-family: inherit;
   }
@@ -80,7 +80,10 @@
   <!-- ② 書くときのヒント（任意） -->
   <section class="card">
     <h2>書くときのヒント（任意）</h2>
-    <p class="muted">当てはまるものをタップすると、下の欄に書き出しが入ります。自由に書き換えてください。</p>
+    <p class="muted">当てはまるものをタップすると、下の欄に文章の下書きができます。ご自身の言葉で一言足したり、自由に書き換えたりしてください。</p>
+
+    <div class="muted" style="margin-top:8px">ご利用は</div>
+    <div class="chips" data-group="visit"></div>
 
     <div class="muted" style="margin-top:8px">お売りいただいた品物</div>
     <div class="chips" data-group="item"></div>
@@ -117,33 +120,104 @@ const CONFIG = {
   // Googleビジネスプロフィール管理画面の「口コミを依頼」で取得したURL
   // もしくは https://search.google.com/local/writereview?placeid=＜プレイスID＞
   reviewUrl: "https://g.page/r/CRv1XEL0wy6gEAE/review",
+  // ご利用回数（1つだけ選べる）
+  visits: ["初めて", "2回目以上"],
+  // 品物（複数選べる。「その他」は文章に品名を出さない）
   items:  ["ブランド品", "金・貴金属", "時計", "ジュエリー", "切手・古銭", "お酒", "その他"],
-  points: ["査定の説明が丁寧", "スタッフの対応が親切", "待ち時間が短い", "入りやすい雰囲気", "想像より高く売れた"],
+  // 印象に残ったこと：ボタンの文字 → 文の途中の形（mid）と、文末の形（end）
+  points: [
+    { label: "査定の説明が丁寧",   mid: "査定の内容を一つずつ丁寧に説明していただき", end: "査定の内容を一つずつ丁寧に説明していただけました" },
+    { label: "スタッフの対応が親切", mid: "スタッフの方の対応も親切で",               end: "スタッフの方の対応も親切でした" },
+    { label: "待ち時間が短い",     mid: "待ち時間も短く",                         end: "待ち時間も短くて助かりました" },
+    { label: "入りやすい雰囲気",   mid: "お店も入りやすい雰囲気で",                 end: "お店も入りやすい雰囲気でした" },
+    { label: "想像より高く売れた", mid: "思っていたより高い金額をつけていただき",     end: "思っていたより高い金額がついて嬉しかったです" },
+  ],
 };
+
+/* ---- 選んだ内容から、ひとつながりの文章を組み立てる ---- */
+// 言い回しは開くたびにランダムで1つ選ぶ（全員が同じ文章になるのを防ぐ）。
+// 1回開いている間は固定なので、ボタンを押すたびに文がガラッと変わることはない。
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const WORDING = {
+  firstWithItem:  pick(["今回初めて、{items}の買取をお願いしました。", "初めて利用し、{items}を買い取っていただきました。"]),
+  repeatWithItem: pick(["何度か利用していますが、今回は{items}の買取をお願いしました。", "今回も{items}を買い取っていただきました。"]),
+  itemOnly:       pick(["{items}の買取をお願いしました。", "{items}を買い取っていただきました。"]),
+  firstOnly:      pick(["今回初めて利用しました。", "初めて利用させていただきました。"]),
+  repeatOnly:     pick(["何度か利用させていただいています。", "いつも利用させていただいています。"]),
+  closing:        pick(["また機会があれば利用したいと思います。", "また何かあればお願いしたいです。", "安心して利用できるお店だと思います。"]),
+};
+
+// ["A","B","C"] → "A、BとC"
+function joinItems(list) {
+  if (list.length <= 1) return list.join("");
+  return list.slice(0, -1).join("、") + "と" + list[list.length - 1];
+}
+
+// 「〜で、〜でした。」のように2つずつ文をつなぐ（長すぎる1文にしない）
+function joinPoints(points) {
+  const sentences = [];
+  for (let i = 0; i < points.length; i += 2) {
+    const pair = points.slice(i, i + 2);
+    let s = pair.length === 2 ? `${pair[0].mid}、${pair[1].end}。` : `${pair[0].end}。`;
+    if (i === 0) s = s.replace(/^(スタッフの方の対応|待ち時間|お店)も/, "$1が"); // 文頭の「〜も」を「〜が」に
+    sentences.push(s);
+  }
+  return sentences.join("");
+}
+
+function buildText(sel) {
+  const items = sel.item.filter(x => x !== "その他");
+  const itemText = items.length ? joinItems(items) : (sel.item.length ? "手持ちの品" : "");
+  let opening = "";
+  if (itemText) {
+    const t = sel.visit === "初めて" ? WORDING.firstWithItem : sel.visit ? WORDING.repeatWithItem : WORDING.itemOnly;
+    opening = t.replace("{items}", itemText);
+  } else if (sel.visit) {
+    opening = sel.visit === "初めて" ? WORDING.firstOnly : WORDING.repeatOnly;
+  }
+  const points = CONFIG.points.filter(p => sel.point.includes(p.label));
+  const body = joinPoints(points);
+  const closing = points.length ? WORDING.closing : ""; // 良かった点を選んだ人だけ締めの一文
+  return opening + body + closing;
+}
 
 /* ---- ヒントのボタンを作る ---- */
 document.getElementById("storeName").textContent = CONFIG.storeName;
 const textarea = document.getElementById("review");
+const selected = { visit: "", item: [], point: [] };
+let lastGenerated = "";
 
-function makeChips(group, labels, toSentence) {
+function refresh() {
+  // お客様が自分で文章を直していたら、勝手に上書きしない
+  if (textarea.value !== lastGenerated && textarea.value.trim() !== "") {
+    if (!confirm("入力した文章を、選んだ内容で作り直しますか？\n（キャンセルすると今の文章を残します）")) return;
+  }
+  lastGenerated = buildText(selected);
+  textarea.value = lastGenerated;
+}
+
+function makeChips(group, labels, single) {
   const box = document.querySelector(`.chips[data-group="${group}"]`);
   labels.forEach(label => {
     const b = document.createElement("button");
     b.type = "button"; b.className = "chip"; b.textContent = label;
     b.onclick = () => {
-      b.classList.toggle("on");
-      if (b.classList.contains("on")) {
-        // 押したときは、文の書き出しを1行足すだけ（全文自動生成はしない）
-        const line = toSentence(label);
-        textarea.value = (textarea.value ? textarea.value + "\n" : "") + line;
+      if (single) {
+        selected[group] = selected[group] === label ? "" : label;
+        box.querySelectorAll(".chip").forEach(c => c.classList.toggle("on", c.textContent === selected[group]));
+      } else {
+        b.classList.toggle("on");
+        const list = selected[group];
+        b.classList.contains("on") ? list.push(label) : list.splice(list.indexOf(label), 1);
       }
-      textarea.focus();
+      refresh();
     };
     box.appendChild(b);
   });
 }
-makeChips("item",  CONFIG.items,  l => `${l}の買取でお世話になりました。`);
-makeChips("point", CONFIG.points, l => `${l}と感じました。`);
+makeChips("visit", CONFIG.visits, true);
+makeChips("item",  CONFIG.items);
+makeChips("point", CONFIG.points.map(p => p.label));
 
 /* ---- Googleへ ---- */
 const toast = document.getElementById("toast");
