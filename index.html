@@ -3,13 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
 <title>口コミのお願い｜買取大吉 川内大小路店</title>
 <style>
   /* ===== 色の設定（ここを変えると全体の色が変わります） ===== */
   :root {
-    --navy: #1f2a5c;
-    --gold: #c9a227;
-    --bg: #f5f6fa;
+    /* 買取大吉VIガイドライン ver3.04 のコーポレートカラー */
+    --navy: #2f3185;    /* ブルー（PANTONE 294C 相当。ガイドラインPDFの表示色） */
+    --red: #ff0001;     /* レッド（DIC565） */
+    --lav: #d2d5ec;     /* ラベンダー（DIC2193。青ベース時の「買取」の色） */
+    --bg: #f3f4f9;
     --card: #ffffff;
     --text: #1a1a1a;
     --muted: #4b5060;   /* 補足文の色。薄すぎると読みにくいので濃いめ */
@@ -18,15 +23,18 @@
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--bg); color: var(--text);
-    font-family: -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+    font-family: "Noto Sans JP", "Source Han Sans JP", -apple-system, "Hiragino Sans", sans-serif; /* VI指定書体: 源ノ角ゴシック（= Noto Sans JP） */
     font-size: 17px; line-height: 1.75;
   }
-  header {
-    background: var(--navy); color: #fff; text-align: center;
-    padding: 22px 16px 18px;
+  /* ロゴは青ベース用をそのまま使用（色・形の変更は禁止。サイズのみ変更可）。
+     周囲にロゴ高さの25%以上の余白を確保する */
+  header { background: var(--navy); color: #fff; text-align: center; padding: 28px 16px 20px; }
+  header .logo { display: block; width: 260px; max-width: 80%; height: auto; margin: 0 auto; }
+  header h1 {
+    margin: 22px 0 0; font-size: 22px; font-weight: 700; letter-spacing: .08em;
+    color: #fff; border-top: 1px solid rgba(210,213,236,.35); padding-top: 14px;
+    display: inline-block;
   }
-  header .brand { font-size: 14px; letter-spacing: .1em; color: var(--gold); }
-  header h1 { margin: 4px 0 0; font-size: 24px; }
   main { max-width: 480px; margin: 0 auto; padding: 16px; }
   .card {
     background: var(--card); border-radius: 16px; padding: 22px 18px;
@@ -39,13 +47,13 @@
   }
   .num {
     flex: none; width: 32px; height: 32px; border-radius: 50%;
-    background: var(--gold); color: #fff; font-size: 17px;
+    background: var(--navy); color: #fff; font-size: 17px;
     display: grid; place-items: center;
   }
   .muted { color: var(--muted); font-size: 16px; margin: 0; }
   /* 選択肢グループの見出し */
   .label {
-    margin: 22px 0 10px; padding-left: 10px; border-left: 4px solid var(--gold);
+    margin: 22px 0 10px; padding-left: 10px; border-left: 4px solid var(--red);
     font-size: 17px; font-weight: bold; color: var(--navy); line-height: 1.3;
   }
   .label small { font-weight: normal; color: var(--muted); font-size: 14px; }
@@ -68,9 +76,9 @@
   textarea:focus { outline: none; border-color: var(--navy); }
   .btn {
     display: block; width: 100%; padding: 19px; border: 0; border-radius: 14px;
-    background: #1a73e8; color: #fff; font-size: 20px; font-weight: bold;
+    background: var(--navy); color: #fff; font-size: 20px; font-weight: bold;
     cursor: pointer; text-align: center; text-decoration: none;
-    box-shadow: 0 4px 10px rgba(26,115,232,.35);
+    box-shadow: 0 4px 10px rgba(47,49,133,.35);
   }
   .btn:active { opacity: .85; }
   .steps { padding-left: 22px; margin: 4px 0 0; font-size: 16px; }
@@ -88,8 +96,8 @@
 <body>
 
 <header>
-  <div class="brand">BRAND・貴金属・時計 買取</div>
-  <h1 id="storeName">買取大吉 川内大小路店</h1>
+  <img class="logo" src="assets/logo_h_blue.png" alt="買取大吉 KAITORI DAIKICHI">
+  <h1 id="storeName">川内大小路店</h1>
 </header>
 
 <main>
@@ -142,7 +150,7 @@
    設定（お店ごとに変えるのはここだけ）
    ========================================================= */
 const CONFIG = {
-  storeName: "買取大吉 川内大小路店",
+  storeName: "川内大小路店",   // ロゴの下に表示する店舗名
   // Googleビジネスプロフィール管理画面の「口コミを依頼」で取得したURL
   // もしくは https://search.google.com/local/writereview?placeid=＜プレイスID＞
   reviewUrl: "https://g.page/r/CRv1XEL0wy6gEAE/review",
@@ -157,26 +165,48 @@ const CONFIG = {
   // ★ 画面にはこの並び順のまま表示される。選んでほしいものほど上に書く。
   // 文頭に来たときは「〜も」が自動で「〜が」に変わる（FIRST_SUBJECTS を参照）
   points: [
+    // rec: その項目を選んだ人の口コミの最後に入る「これから来る人へのひと言」
+    //      （口コミを読んだ人が「自分も行ってみよう」と思えるように）
+    // rp : rec を使う優先順位（小さいほど優先）。複数選ばれたら1つだけ使う
     // --- 上位：お店として特に伝わってほしいこと ---
-    { label: "説明が丁寧",       mid: "査定の内容を一つずつ丁寧に説明していただき", end: "査定の内容を一つずつ丁寧に説明していただけました" },
-    { label: "対応が親切",   mid: "スタッフの方の対応も親切で",               end: "スタッフの方の対応も親切でした" },
-    { label: "想像より高額",     mid: "思っていたより高い金額をつけていただき",     end: "思っていたより高い金額がついて嬉しかったです" },
-    { label: "相談しやすい",       mid: "わからないことも気軽に相談でき",           end: "わからないことも気軽に相談できました" },
-    { label: "無理に勧めない",     mid: "売るよう無理に勧められることもなく",       end: "売るよう無理に勧められることもなく安心でした" },
-    { label: "扱いが丁寧", mid: "大切な品物を丁寧に扱っていただき",         end: "大切な品物を丁寧に扱っていただけました" },
-    { label: "相場がわかった",     mid: "相場についてわかりやすく教えていただき",     end: "相場についてわかりやすく教えていただけました" },
+    { label: "説明が丁寧",     rp: 6, mid: "査定の内容を一つずつ丁寧に説明していただき", end: "査定の内容を一つずつ丁寧に説明していただけました",
+      rec: "買取が初めての方でも、納得して売れるお店だと思います。" },
+    { label: "対応が親切",     rp: 9, mid: "スタッフの方の対応も親切で",               end: "スタッフの方の対応も親切でした",
+      rec: "初めての方でも安心して相談できるお店です。" },
+    { label: "想像より高額",   rp: 5, mid: "思っていたより高い金額をつけていただき",     end: "思っていたより高い金額がついて嬉しかったです",
+      rec: "売ろうか迷っている物がある方は、一度査定してもらう価値があると思います。" },
+    { label: "壊れた物も買取", rp: 1, mid: "壊れて使えなくなった物まで買い取っていただき", end: "壊れて使えなくなった物まで買い取っていただけました",
+      rec: "壊れていて売れないと諦めている物がある方は、捨てる前に一度相談してみるのがおすすめです。" },
+    { label: "相談しやすい",   rp: 8, mid: "わからないことも気軽に相談でき",           end: "わからないことも気軽に相談できました",
+      rec: "わからないことがあっても、気軽に聞けるお店です。" },
+    { label: "無理に勧めない", rp: 4, mid: "売るよう無理に勧められることもなく",       end: "売るよう無理に勧められることもなく安心でした",
+      rec: "まずは査定額だけ聞いてみたい、という方でも気軽に行けると思います。" },
+    { label: "扱いが丁寧",     rp: 10, mid: "大切な品物を丁寧に扱っていただき",         end: "大切な品物を丁寧に扱っていただけました",
+      rec: "思い入れのある品物を手放すときにも、安心してお任せできます。" },
+    { label: "相場がわかった", rp: 7, mid: "相場についてわかりやすく教えていただき",     end: "相場についてわかりやすく教えていただけました",
+      rec: "相場がわからず不安な方にもおすすめです。" },
     // --- 中位 ---
-    { label: "査定が早い",     mid: "査定もスピーディーで",                     end: "査定もスピーディーでした" },
-    { label: "その場で支払い",     mid: "その場ですぐに支払っていただき",           end: "その場ですぐに支払っていただけて助かりました" },
-    { label: "査定だけでもOK",   mid: "査定だけのつもりでも快く対応していただき",   end: "査定だけのつもりでも快く対応していただけました" },
-    { label: "遺品整理の相談", mid: "家族の遺品や整理品についても親身に相談に乗っていただき", end: "家族の遺品や整理品についても親身に相談に乗っていただけました" },
-    { label: "少量でもOK",       mid: "少しの量でも快く査定していただき",         end: "少しの量でも快く査定していただけました" },
-    { label: "古い物も査定", mid: "古い物や傷のある物も一つずつ見ていただき", end: "古い物や傷のある物も一つずつ見ていただけました" },
-    { label: "他店より高い",       mid: "他のお店よりも高い金額を提示していただき",   end: "他のお店よりも高い金額を提示していただけました" },
+    { label: "査定が早い",     rp: 12, mid: "査定もスピーディーで",                     end: "査定もスピーディーでした",
+      rec: "時間があまりない時でも利用しやすいお店です。" },
+    { label: "その場で支払い", rp: 13, mid: "その場ですぐに支払っていただき",           end: "その場ですぐに支払っていただけて助かりました",
+      rec: "すぐに現金化したい方にも助かるお店だと思います。" },
+    { label: "査定だけでもOK", rp: 3, mid: "査定だけのつもりでも快く対応していただき",   end: "査定だけのつもりでも快く対応していただけました",
+      rec: "売るかどうか決めていなくても、気軽に立ち寄れるお店です。" },
+    { label: "遺品整理の相談", rp: 2, mid: "家族の遺品や整理品についても親身に相談に乗っていただき", end: "家族の遺品や整理品についても親身に相談に乗っていただけました",
+      rec: "実家の片付けや遺品の整理で困っている方にもおすすめです。" },
+    { label: "少量でもOK",     rp: 11, mid: "少しの量でも快く査定していただき",         end: "少しの量でも快く査定していただけました",
+      rec: "少しだけ売りたいという時でも、気軽に持ち込めます。" },
+    { label: "古い物も査定",   rp: 1.5, mid: "古い物や傷のある物も一つずつ見ていただき", end: "古い物や傷のある物も一つずつ見ていただけました",
+      rec: "古い物や傷のある物でも、あきらめずに一度見てもらうといいと思います。" },
+    { label: "他店より高い",   rp: 5.5, mid: "他のお店よりも高い金額を提示していただき",   end: "他のお店よりも高い金額を提示していただけました",
+      rec: "どこに売るか迷っている方は、比べてみる価値があると思います。" },
     // --- 下位：お店の環境 ---
-    { label: "待ち時間が短い",         mid: "待ち時間も短く",                         end: "待ち時間も短くて助かりました" },
-    { label: "入りやすい",       mid: "お店も入りやすい雰囲気で",                 end: "お店も入りやすい雰囲気でした" },
-    { label: "店内が清潔",             mid: "店内も清潔で",                           end: "店内も清潔で気持ちよかったです" },
+    { label: "待ち時間が短い", rp: 14, mid: "待ち時間も短く",                         end: "待ち時間も短くて助かりました",
+      rec: "忙しい方でも利用しやすいと思います。" },
+    { label: "入りやすい",     rp: 15, mid: "お店も入りやすい雰囲気で",                 end: "お店も入りやすい雰囲気でした",
+      rec: "一人でも入りやすいお店です。" },
+    { label: "店内が清潔",     rp: 16, mid: "店内も清潔で",                           end: "店内も清潔で気持ちよかったです",
+      rec: "落ち着いて相談できるお店です。" },
   ],
 };
 
@@ -185,12 +215,16 @@ const CONFIG = {
 // 1回開いている間は固定なので、ボタンを押すたびに文がガラッと変わることはない。
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const WORDING = {
-  firstWithItem:  pick(["今回初めて、{items}の買取をお願いしました。", "初めて利用し、{items}を買い取っていただきました。"]),
-  repeatWithItem: pick(["何度か利用していますが、今回は{items}の買取をお願いしました。", "今回も{items}を買い取っていただきました。"]),
+  firstWithItem:  pick(["{items}を売りたくて、初めて利用しました。", "今回初めて、{items}の買取をお願いしました。"]),
+  repeatWithItem: pick(["{items}の買取で、また利用させていただきました。", "何度か利用していますが、今回は{items}の買取をお願いしました。"]),
   itemOnly:       pick(["{items}の買取をお願いしました。", "{items}を買い取っていただきました。"]),
   firstOnly:      pick(["今回初めて利用しました。", "初めて利用させていただきました。"]),
   repeatOnly:     pick(["何度か利用させていただいています。", "いつも利用させていただいています。"]),
-  closing:        pick(["また機会があれば利用したいと思います。", "また何かあればお願いしたいです。", "安心して利用できるお店だと思います。"]),
+  // 初めての人：「不安だった → 安心できた」の流れにすると、読んだ人が自分に重ねやすい
+  firstFeeling:   pick(["少し緊張していましたが、", "最初は少し不安でしたが、"]),  // 直前の文に「初めて」があるので繰り返さない
+  // これから来る人へのひと言がない時の、初めての人向けの締め
+  firstRec:       "初めての方でも安心して利用できると思います。",
+  closing:        pick(["また機会があれば利用したいと思います。", "また何かあればお願いしたいです。", "次も利用させていただきます。"]),
 };
 
 // ["A","B","C"] → "A、BとC"
@@ -217,17 +251,32 @@ function joinPoints(points) {
 function buildText(sel) {
   const items = sel.item.filter(x => x !== "その他");
   const itemText = items.length ? joinItems(items) : (sel.item.length ? "手持ちの品" : "");
+  const first = sel.visit === "初めて";
+
+  // ① きっかけ：何を売りに来たか
   let opening = "";
   if (itemText) {
-    const t = sel.visit === "初めて" ? WORDING.firstWithItem : sel.visit ? WORDING.repeatWithItem : WORDING.itemOnly;
+    const t = first ? WORDING.firstWithItem : sel.visit ? WORDING.repeatWithItem : WORDING.itemOnly;
     opening = t.replace("{items}", itemText);
   } else if (sel.visit) {
-    opening = sel.visit === "初めて" ? WORDING.firstOnly : WORDING.repeatOnly;
+    opening = first ? WORDING.firstOnly : WORDING.repeatOnly;
   }
+
+  // ② 体験：良かったこと（初めての人は「不安だったけど」から始める）
   const points = CONFIG.points.filter(p => sel.point.includes(p.label));
-  const body = joinPoints(points);
-  const closing = points.length ? WORDING.closing : ""; // 良かった点を選んだ人だけ締めの一文
-  return opening + body + closing;
+  let body = joinPoints(points);
+  if (first && body) body = WORDING.firstFeeling + body;
+
+  // ③ これから来る人へのひと言：選ばれた中で一番優先度の高いものを1つだけ
+  let rec = "";
+  if (points.length) {
+    rec = [...points].sort((a, b) => a.rp - b.rp)[0].rec;
+    if (first && rec === CONFIG.points.find(p => p.label === "対応が親切").rec) rec = WORDING.firstRec;
+  }
+
+  // ④ 締め：良かった点を選んだ人だけ
+  const closing = points.length ? WORDING.closing : "";
+  return opening + body + rec + closing;
 }
 
 /* ---- ヒントのボタンを作る ---- */
