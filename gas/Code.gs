@@ -17,8 +17,9 @@
  */
 
 const SHEET_NAME = 'アンケート';
-const HEADERS = ['日時', 'ID', '答え方', 'ご利用', '来店経路', '品物', '印象に残ったこと',
+const HEADERS = ['日時', 'ID', '口コミの書き方', 'ご利用', '来店経路', '品物', '印象に残ったこと',
                  'あなたの言葉', '下書きの文章', 'Google口コミボタン', 'ボタンを押した日時', 'コピーした文章'];
+const COL_MODE    = 3;    // 「口コミの書き方」ひとことで／くわしく（C列）※口コミ画面で決まる
 const COL_OWN     = 8;    // 「あなたの言葉」（H列）
 const COL_GOOGLE  = 10;   // 「Google口コミボタン」押した／押していない（J列）
 const COL_PRESSED = 11;   // 「ボタンを押した日時」（K列）
@@ -36,19 +37,20 @@ function doPost(e) {
     if (d.type === 'survey') {
       sh.appendRow([
         new Date(), id,
-        safe_(d.mode, 10), safe_(d.visit, 20), safe_(d.route, 200), safe_(d.items, 300),
+        '', safe_(d.visit, 20), safe_(d.route, 200), safe_(d.items, 300),
         safe_(d.points, 400), safe_(d.own, 200), safe_(d.text, 1000), '押していない', '', '',
       ]);
     } else if (d.type === 'google') {
       const row = findRow_(sh, id);
       if (row) {
+        sh.getRange(row, COL_MODE).setValue(safe_(d.mode, 10));
         sh.getRange(row, COL_GOOGLE).setValue('押した');
         sh.getRange(row, COL_PRESSED).setValue(new Date());
         sh.getRange(row, COL_FINAL).setValue(safe_(d.text, 1000));
         if (d.own) sh.getRange(row, COL_OWN).setValue(safe_(d.own, 200));   // 口コミ画面で書き足した一言
       } else {
         // アンケートをとばして口コミへ進んだ人
-        sh.appendRow([new Date(), id, '（アンケートなし）', '', '', '', '', safe_(d.own, 200), '',
+        sh.appendRow([new Date(), id, safe_(d.mode, 10), '（アンケートなし）', '', '', '', safe_(d.own, 200), '',
                       '押した', new Date(), safe_(d.text, 1000)]);
       }
     }
@@ -97,7 +99,7 @@ function reply_(msg) {
 // 動作確認用：Apps Script の画面でこの関数を選んで [実行] すると、テスト行が1行入る
 function testInsert() {
   doPost({ postData: { contents: JSON.stringify({
-    id: '0123456789abcdef', type: 'survey', mode: 'かんたん', visit: '初めて',
+    id: '0123456789abcdef', type: 'survey', visit: '初めて',
     route: 'Googleマップ', items: '時計', points: '説明が丁寧', own: '', text: 'テストです',
   }) } });
 }

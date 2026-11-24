@@ -140,17 +140,10 @@
 
     <section class="card">
       <h2><span class="num">1</span>アンケート</h2>
-      <div class="label">答え方をえらぶ</div>
-      <div class="modes">
-        <button type="button" class="mode" data-mode="short"><b>かんたん</b><small>タップだけで</small></button>
-        <button type="button" class="mode" data-mode="detail"><b>くわしく</b><small>しっかり答える</small></button>
-      </div>
-      <p class="muted" style="margin-top:12px">当てはまるものをタップしてください。わからない項目はとばしてOKです。</p>
+      <p class="muted">当てはまるものをタップしてください。わからない項目はとばしてOKです。</p>
 
-      <div class="detail-only">
-        <div class="label">ご利用は</div>
-        <div class="chips" data-group="visit"></div>
-      </div>
+      <div class="label">ご利用は</div>
+      <div class="chips" data-group="visit"></div>
 
       <div class="label">何を見てご来店されましたか？ <small>（いくつでも）</small></div>
       <div class="chips" data-group="route"></div>
@@ -179,6 +172,12 @@
 
     <section class="card">
       <h2><span class="num">2</span>Googleで口コミを書く</h2>
+      <div class="label">口コミの書き方をえらぶ</div>
+      <div class="modes">
+        <button type="button" class="mode" data-mode="short"><b>ひとことで</b><small>サッと短く</small></button>
+        <button type="button" class="mode" data-mode="detail"><b>くわしく</b><small>体験をしっかり書く</small></button>
+      </div>
+      <p class="muted" style="margin-top:10px">アンケートの回答から下書きを作りました。書き方を切り替えると下書きが変わります。</p>
       <div class="label">あなたの言葉でひとこと <small>（任意・文章に入ります）</small></div>
       <p class="muted" style="margin:-4px 0 6px">例えば… <span class="ownQ"></span></p>
       <input class="own" type="text" maxlength="200" placeholder="思ったことを、そのまま一言どうぞ">
@@ -605,7 +604,6 @@ document.getElementById("toReview").onclick = () => {
   if (answered) {
     send({
       type: "survey",
-      mode: mode === "short" ? "かんたん" : "くわしく",
       visit: selected.visit,
       route: selected.route.join("、"),
       items: selected.item.join("、"),
@@ -624,7 +622,7 @@ const toast = document.getElementById("toast");
 document.getElementById("goGoogle").onclick = async (e) => {
   e.preventDefault();
   const text = textarea.value.trim();
-  send({ type: "google", own: ownValue(), text });   // 「Google口コミボタンを押した」を記録
+  send({ type: "google", mode: mode === "short" ? "ひとことで" : "くわしく", own: ownValue(), text });   // 「Google口コミボタンを押した」を記録
   if (text) {
     try {
       await navigator.clipboard.writeText(text);
