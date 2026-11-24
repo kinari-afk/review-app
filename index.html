@@ -74,6 +74,26 @@
     border: 2px solid var(--line); border-radius: 12px; resize: vertical;
   }
   textarea:focus { outline: none; border-color: var(--navy); }
+  /* 書き方の切り替え（ひとこと／くわしく） */
+  .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mode {
+    border: 2px solid var(--line); background: #fff; color: var(--text); border-radius: 14px;
+    padding: 12px 8px; font-family: inherit; cursor: pointer; line-height: 1.4;
+  }
+  .mode b { display: block; font-size: 18px; }
+  .mode small { font-size: 13px; color: var(--muted); }
+  .mode.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .mode.on small { color: var(--lav); }
+  .own {
+    width: 100%; padding: 12px 14px; font-size: 17px; font-family: inherit;
+    border: 2px solid var(--line); border-radius: 12px;
+  }
+  .own:focus { outline: none; border-color: var(--navy); }
+  .reroll {
+    margin-top: 10px; width: 100%; padding: 10px; font-size: 15px; font-family: inherit;
+    background: #fff; color: var(--navy); border: 2px dashed var(--line); border-radius: 12px; cursor: pointer;
+  }
+  [hidden] { display: none !important; }
   .btn {
     display: block; width: 100%; padding: 19px; border: 0; border-radius: 14px;
     background: var(--navy); color: #fff; font-size: 20px; font-weight: bold;
@@ -110,22 +130,36 @@
     </p>
   </section>
 
-  <!-- ② 書くときのヒント（任意） -->
+  <!-- ② 書き方をえらぶ → 当てはまるものをタップ -->
   <section class="card">
-    <h2><span class="num">1</span>当てはまるものをタップ</h2>
-    <p class="muted">下の欄に文章の下書きができます。ご自身の言葉で一言足したり、自由に書き換えたりしてください。（任意）</p>
+    <h2><span class="num">1</span>書き方をえらぶ</h2>
+    <div class="modes">
+      <button type="button" class="mode" data-mode="short"><b>ひとことで</b><small>サッと一言だけ</small></button>
+      <button type="button" class="mode" data-mode="detail"><b>くわしく</b><small>体験をしっかり書く</small></button>
+    </div>
+    <p class="muted short-only" style="margin-top:12px">印象に残ったことを<b>1〜2個</b>タップしてください。文章なしで<b>星だけの投稿</b>もできます。</p>
+    <p class="muted detail-only" style="margin-top:12px">当てはまるものをタップすると下書きができます。ご自身の言葉で自由に書き換えてください。</p>
 
-    <div class="label">ご利用は</div>
-    <div class="chips" data-group="visit"></div>
+    <div class="detail-only">
+      <div class="label">ご利用は</div>
+      <div class="chips" data-group="visit"></div>
 
-    <div class="label">お売りいただいた品物 <small>（いくつでも）</small></div>
-    <div class="chips" data-group="item"></div>
+      <div class="label">お売りいただいた品物 <small>（いくつでも）</small></div>
+      <div class="chips" data-group="item"></div>
+    </div>
 
-    <div class="label">印象に残ったこと <small>（いくつでも）</small></div>
+    <div class="label">印象に残ったこと <small class="short-only">（2つまで）</small><small class="detail-only">（いくつでも）</small></div>
     <div class="chips grid" data-group="point"></div>
 
+    <div class="detail-only">
+      <div class="label">あなたの言葉でひとこと <small>（任意）</small></div>
+      <p class="muted" style="margin:-4px 0 6px">例えば… <span id="ownQ"></span></p>
+      <input id="own" class="own" type="text" placeholder="思ったことを、そのまま一言どうぞ">
+    </div>
+
     <div class="label">ご感想（自由に編集できます）</div>
-    <textarea id="review" placeholder="例）初めて利用しましたが、査定の理由を一つずつ説明してもらえて安心できました。"></textarea>
+    <textarea id="review" placeholder="ここに文章が入ります。もちろん、自由に書いてもOKです。"></textarea>
+    <button type="button" id="reroll" class="reroll">🔄 別の言い方にする</button>
   </section>
 
   <!-- ③ Googleへ -->
@@ -161,71 +195,148 @@ const CONFIG = {
     "ブランド品", "金・プラチナ", "時計", "ジュエリー・宝石", "切手", "古銭・記念硬貨",
     "お酒", "金券・商品券", "骨董品", "着物", "食器・陶磁器", "スマホ・カメラ", "その他",
   ],
-  // 印象に残ったこと：ボタンの文字 → 文の途中の形（mid）と、文末の形（end）
+  // 印象に残ったこと
   // ★ 画面にはこの並び順のまま表示される。選んでほしいものほど上に書く。
-  // 文頭に来たときは「〜も」が自動で「〜が」に変わる（FIRST_SUBJECTS を参照）
+  //   mids  : 文の途中の形（〜で、）     ends : 文末の形（〜でした）
+  //   shorts: 「ひとこと」モード用の短い一文
+  //   recs  : 「これから来る人へ」のひと言（くわしくモードで、ときどき入る）
+  //   rp    : recs を使う優先順位（小さいほど優先）
+  // それぞれ複数の言い方を用意し、ページを開くたびにランダムで選ぶ（毎回ちがう文章になる）
   points: [
-    // rec: その項目を選んだ人の口コミの最後に入る「これから来る人へのひと言」
-    //      （口コミを読んだ人が「自分も行ってみよう」と思えるように）
-    // rp : rec を使う優先順位（小さいほど優先）。複数選ばれたら1つだけ使う
     // --- 上位：お店として特に伝わってほしいこと ---
-    { label: "説明が丁寧",     rp: 6, mid: "査定の内容を一つずつ丁寧に説明していただき", end: "査定の内容を一つずつ丁寧に説明していただけました",
-      rec: "買取が初めての方でも、納得して売れるお店だと思います。" },
-    { label: "対応が親切",     rp: 9, mid: "スタッフの方の対応も親切で",               end: "スタッフの方の対応も親切でした",
-      rec: "初めての方でも安心して相談できるお店です。" },
-    { label: "想像より高額",   rp: 5, mid: "思っていたより高い金額をつけていただき",     end: "思っていたより高い金額がついて嬉しかったです",
-      rec: "売ろうか迷っている物がある方は、一度査定してもらう価値があると思います。" },
-    { label: "壊れた物も買取", rp: 1, mid: "壊れて使えなくなった物まで買い取っていただき", end: "壊れて使えなくなった物まで買い取っていただけました",
-      rec: "壊れていて売れないと諦めている物がある方は、捨てる前に一度相談してみるのがおすすめです。" },
-    { label: "相談しやすい",   rp: 8, mid: "わからないことも気軽に相談でき",           end: "わからないことも気軽に相談できました",
-      rec: "わからないことがあっても、気軽に聞けるお店です。" },
-    { label: "無理に勧めない", rp: 4, mid: "売るよう無理に勧められることもなく",       end: "売るよう無理に勧められることもなく安心でした",
-      rec: "まずは査定額だけ聞いてみたい、という方でも気軽に行けると思います。" },
-    { label: "扱いが丁寧",     rp: 10, mid: "大切な品物を丁寧に扱っていただき",         end: "大切な品物を丁寧に扱っていただけました",
-      rec: "思い入れのある品物を手放すときにも、安心してお任せできます。" },
-    { label: "相場がわかった", rp: 7, mid: "相場についてわかりやすく教えていただき",     end: "相場についてわかりやすく教えていただけました",
-      rec: "相場がわからず不安な方にもおすすめです。" },
+    { label: "説明が丁寧", rp: 6,
+      mids: ["査定の内容を一つずつ丁寧に説明していただき", "査定額の理由をわかりやすく説明してくれて", "なぜこの金額なのかをきちんと説明してもらえて"],
+      ends: ["査定の内容を一つずつ丁寧に説明していただけました", "査定額の理由をわかりやすく説明してくれました", "なぜこの金額なのか、きちんと説明してもらえて納得できました"],
+      shorts: ["説明が丁寧でわかりやすかったです。", "査定の説明がすごく丁寧でした！", "金額の理由まで説明してくれて納得でした。"],
+      recs: ["初めてでも納得して売れると思います。", "買取が初めての人にもいいと思います。"] },
+    { label: "対応が親切", rp: 9,
+      mids: ["スタッフの方の対応も親切で", "スタッフさんが感じよく対応してくれて", "スタッフの方も優しく話しやすくて"],
+      ends: ["スタッフの方の対応も親切でした", "スタッフさんの感じがとても良かったです", "スタッフの方も優しくて話しやすかったです"],
+      shorts: ["スタッフさんが親切でした。", "対応がとても感じ良かったです！", "親切に対応してもらえました。"],
+      recs: ["安心して相談できるお店です。"] },
+    { label: "想像より高額", rp: 5,
+      mids: ["思っていたより高い金額をつけていただき", "予想以上の金額になって", "想像していたより高く買い取ってもらえて"],
+      ends: ["思っていたより高い金額がついて嬉しかったです", "予想以上の金額になってびっくりしました", "想像していたより高く買い取ってもらえました"],
+      shorts: ["思ってたより高く売れて嬉しかったです！", "予想以上の金額でした。", "想像より高値がついてびっくりしました。"],
+      recs: ["迷っている物があるなら一度見てもらうといいと思います。", "売るか迷っている人は一度査定してもらうといいです。"] },
+    { label: "壊れた物も買取", rp: 1,
+      mids: ["壊れて使えなくなった物まで買い取っていただき", "壊れている物でも値段をつけてくれて", "動かなくなった物まで買い取ってもらえて"],
+      ends: ["壊れて使えなくなった物まで買い取っていただけました", "壊れている物でもちゃんと値段をつけてくれました", "動かなくなった物まで買い取ってもらえて助かりました"],
+      shorts: ["壊れていても買い取ってもらえました！", "壊れた物にも値段がついて驚きました。", "捨てようと思っていた物が売れて助かりました。"],
+      recs: ["捨てる前に一度持っていくのがおすすめです。", "壊れているからと諦めずに相談してみてください。"] },
+    { label: "相談しやすい", rp: 8,
+      mids: ["わからないことも気軽に相談でき", "質問にも嫌な顔せず答えてくれて", "気になることを何でも聞きやすくて"],
+      ends: ["わからないことも気軽に相談できました", "質問にも嫌な顔せず答えてくれました", "気になることを何でも聞きやすい雰囲気でした"],
+      shorts: ["何でも聞きやすかったです。", "質問にも丁寧に答えてくれました。", "気軽に相談できました！"],
+      recs: ["わからないことがあっても気軽に聞けます。"] },
+    { label: "無理に勧めない", rp: 4,
+      mids: ["売るよう無理に勧められることもなく", "しつこく勧められることもなく", "押し売りのような感じもなく"],
+      ends: ["売るよう無理に勧められることもなく安心でした", "しつこく勧められることもなくて良かったです", "押し売りのような感じが全くなくて安心しました"],
+      shorts: ["無理に勧められず安心でした。", "しつこくなくて良かったです。", "押し売り感がなくて安心しました。"],
+      recs: ["まずは金額だけ聞いてみたい人でも行きやすいと思います。"] },
+    { label: "扱いが丁寧", rp: 10,
+      mids: ["大切な品物を丁寧に扱っていただき", "品物を丁寧に扱ってくれて", "思い出の品も大事に扱ってもらえて"],
+      ends: ["大切な品物を丁寧に扱っていただけました", "品物を丁寧に扱ってくれました", "思い出の品も大事に扱ってもらえて嬉しかったです"],
+      shorts: ["品物を丁寧に扱ってくれました。", "扱いが丁寧で好感が持てました。", "大事な物を丁寧に見てもらえました。"],
+      recs: ["思い入れのある物でも安心して任せられます。"] },
+    { label: "相場がわかった", rp: 7,
+      mids: ["相場についてわかりやすく教えていただき", "今の相場も教えてくれて", "相場の話も聞けて"],
+      ends: ["相場についてわかりやすく教えていただけました", "今の相場も教えてくれて参考になりました", "相場の話も聞けて勉強になりました"],
+      shorts: ["相場も教えてもらえて参考になりました。", "今の相場がわかって良かったです。", "相場の話が聞けて勉強になりました。"],
+      recs: ["相場がわからず不安な人にもおすすめです。"] },
     // --- 中位 ---
-    { label: "査定が早い",     rp: 12, mid: "査定もスピーディーで",                     end: "査定もスピーディーでした",
-      rec: "時間があまりない時でも利用しやすいお店です。" },
-    { label: "その場で支払い", rp: 13, mid: "その場ですぐに支払っていただき",           end: "その場ですぐに支払っていただけて助かりました",
-      rec: "すぐに現金化したい方にも助かるお店だと思います。" },
-    { label: "査定だけでもOK", rp: 3, mid: "査定だけのつもりでも快く対応していただき",   end: "査定だけのつもりでも快く対応していただけました",
-      rec: "売るかどうか決めていなくても、気軽に立ち寄れるお店です。" },
-    { label: "遺品整理の相談", rp: 2, mid: "家族の遺品や整理品についても親身に相談に乗っていただき", end: "家族の遺品や整理品についても親身に相談に乗っていただけました",
-      rec: "実家の片付けや遺品の整理で困っている方にもおすすめです。" },
-    { label: "少量でもOK",     rp: 11, mid: "少しの量でも快く査定していただき",         end: "少しの量でも快く査定していただけました",
-      rec: "少しだけ売りたいという時でも、気軽に持ち込めます。" },
-    { label: "古い物も査定",   rp: 1.5, mid: "古い物や傷のある物も一つずつ見ていただき", end: "古い物や傷のある物も一つずつ見ていただけました",
-      rec: "古い物や傷のある物でも、あきらめずに一度見てもらうといいと思います。" },
-    { label: "他店より高い",   rp: 5.5, mid: "他のお店よりも高い金額を提示していただき",   end: "他のお店よりも高い金額を提示していただけました",
-      rec: "どこに売るか迷っている方は、比べてみる価値があると思います。" },
+    { label: "査定が早い", rp: 12,
+      mids: ["査定もスピーディーで", "査定もあっという間で", "思っていたより早く査定が終わり"],
+      ends: ["査定もスピーディーでした", "査定があっという間に終わりました", "思っていたより早く査定が終わりました"],
+      shorts: ["査定が早くて助かりました。", "あっという間に査定が終わりました！", "スピーディーでした。"],
+      recs: ["時間がない時でも利用しやすいです。"] },
+    { label: "その場で支払い", rp: 13,
+      mids: ["その場ですぐに支払っていただき", "その場で支払いまで済んで", "すぐに支払ってもらえて"],
+      ends: ["その場ですぐに支払っていただけて助かりました", "その場で支払いまで済みました", "すぐに支払ってもらえて助かりました"],
+      shorts: ["その場で支払ってもらえて助かりました。", "支払いもその場ですぐでした。", "すぐに支払ってもらえました。"],
+      recs: ["急いでいる時にも助かります。"] },
+    { label: "査定だけでもOK", rp: 3,
+      mids: ["査定だけのつもりでも快く対応していただき", "査定だけでも嫌な顔をされず", "売るか迷っていても快く見てくれて"],
+      ends: ["査定だけのつもりでも快く対応していただけました", "査定だけでも嫌な顔をされませんでした", "売るか迷っていても快く見てくれました"],
+      shorts: ["査定だけでも快く見てもらえました。", "査定のみでもOKでした。", "迷っていても気軽に見てもらえました。"],
+      recs: ["売るか決めていなくても気軽に立ち寄れます。"] },
+    { label: "遺品整理の相談", rp: 2,
+      mids: ["家族の遺品や整理品についても親身に相談に乗っていただき", "実家の片付けで出た物の相談にも乗ってくれて", "遺品の整理についても親身に話を聞いてもらえて"],
+      ends: ["家族の遺品や整理品についても親身に相談に乗っていただけました", "実家の片付けで出た物の相談にも乗ってくれました", "遺品の整理についても親身に話を聞いてもらえました"],
+      shorts: ["遺品整理の相談にも乗ってもらえました。", "実家の片付けで出た物をまとめて見てもらえました。", "親身に相談に乗ってくれました。"],
+      recs: ["実家の片付けで困っている人にもおすすめです。"] },
+    { label: "少量でもOK", rp: 11,
+      mids: ["少しの量でも快く査定していただき", "少しだけでも嫌な顔せず見てくれて", "数点だけでも丁寧に見てもらえて"],
+      ends: ["少しの量でも快く査定していただけました", "少しだけでも嫌な顔せず見てくれました", "数点だけでも丁寧に見てもらえました"],
+      shorts: ["少しだけでも快く見てくれました。", "数点だけでも大丈夫でした。", "少量でも嫌な顔されませんでした。"],
+      recs: ["少しだけ売りたい時でも気軽に持ち込めます。"] },
+    { label: "古い物も査定", rp: 1.5,
+      mids: ["古い物や傷のある物も一つずつ見ていただき", "古くて傷のある物まで見てくれて", "昔の物も一つずつ確認してもらえて"],
+      ends: ["古い物や傷のある物も一つずつ見ていただけました", "古くて傷のある物まで見てくれました", "昔の物も一つずつ確認してもらえました"],
+      shorts: ["古い物でもちゃんと見てくれました。", "傷がある物も査定してもらえました。", "昔の物も一つずつ見てもらえました。"],
+      recs: ["古い物でも諦めずに一度見てもらうといいと思います。"] },
+    { label: "他店より高い", rp: 5.5,
+      mids: ["他のお店よりも高い金額を提示していただき", "他店より高い金額を出してくれて", "よそで聞いた金額より高くて"],
+      ends: ["他のお店よりも高い金額を提示していただけました", "他店より高い金額を出してくれました", "よそで聞いた金額より高くて驚きました"],
+      shorts: ["他のお店より高かったです！", "よそより高く売れました。", "他店と比べてこちらが高かったです。"],
+      recs: ["どこに売るか迷っているなら比べてみるといいです。"] },
     // --- 下位：お店の環境 ---
-    { label: "待ち時間が短い", rp: 14, mid: "待ち時間も短く",                         end: "待ち時間も短くて助かりました",
-      rec: "忙しい方でも利用しやすいと思います。" },
-    { label: "入りやすい",     rp: 15, mid: "お店も入りやすい雰囲気で",                 end: "お店も入りやすい雰囲気でした",
-      rec: "一人でも入りやすいお店です。" },
-    { label: "店内が清潔",     rp: 16, mid: "店内も清潔で",                           end: "店内も清潔で気持ちよかったです",
-      rec: "落ち着いて相談できるお店です。" },
+    { label: "待ち時間が短い", rp: 14,
+      mids: ["待ち時間も短く", "あまり待たずに済み", "待たされることもなく"],
+      ends: ["待ち時間も短くて助かりました", "あまり待たずに済みました", "待たされることもなくスムーズでした"],
+      shorts: ["待ち時間が短くて助かりました。", "ほとんど待たずに済みました。", "スムーズでした。"],
+      recs: ["忙しい人でも利用しやすいと思います。"] },
+    { label: "入りやすい", rp: 15,
+      mids: ["お店も入りやすい雰囲気で", "一人でも入りやすいお店で", "お店の雰囲気も入りやすく"],
+      ends: ["お店も入りやすい雰囲気でした", "一人でも入りやすいお店でした", "お店の雰囲気も入りやすかったです"],
+      shorts: ["入りやすいお店でした。", "一人でも入りやすかったです。", "雰囲気が良くて入りやすかったです。"],
+      recs: ["一人でも気軽に入れます。"] },
+    { label: "店内が清潔", rp: 16,
+      mids: ["店内も清潔で", "店内もきれいで", "お店の中も清潔感があって"],
+      ends: ["店内も清潔で気持ちよかったです", "店内もきれいでした", "お店の中も清潔感がありました"],
+      shorts: ["店内がきれいでした。", "清潔感のあるお店でした。", "店内も明るくてきれいでした。"],
+      recs: ["落ち着いて相談できるお店です。"] },
+  ],
+  // 「くわしく」モードで、お客様自身の言葉を引き出す質問（毎回ちがう質問が出る）
+  questions: [
+    "対応したスタッフはどうでしたか？",
+    "売ろうと思ったきっかけは？",
+    "お店に来る前、不安だったことは？",
+    "売ったお金は何に使いますか？",
+    "その品物にはどんな思い出がありますか？",
+    "お店の場所や駐車場はどうでしたか？",
   ],
 };
 
-/* ---- 選んだ内容から、ひとつながりの文章を組み立てる ---- */
-// 言い回しは開くたびにランダムで1つ選ぶ（全員が同じ文章になるのを防ぐ）。
-// 1回開いている間は固定なので、ボタンを押すたびに文がガラッと変わることはない。
+/* =========================================================
+   文章の組み立て
+   ・似た文章ばかりにならないよう、言い回しはページを開くたびにランダムで選ぶ
+   ・「別の言い方にする」ボタンでも選び直せる
+   ・1回開いている間は固定なので、ボタンを押すたびに文がガラッと変わることはない
+   ========================================================= */
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-const WORDING = {
-  firstWithItem:  pick(["{items}を売りたくて、初めて利用しました。", "今回初めて、{items}の買取をお願いしました。"]),
-  repeatWithItem: pick(["{items}の買取で、また利用させていただきました。", "何度か利用していますが、今回は{items}の買取をお願いしました。"]),
-  itemOnly:       pick(["{items}の買取をお願いしました。", "{items}を買い取っていただきました。"]),
-  firstOnly:      pick(["今回初めて利用しました。", "初めて利用させていただきました。"]),
-  repeatOnly:     pick(["何度か利用させていただいています。", "いつも利用させていただいています。"]),
-  // 初めての人：「不安だった → 安心できた」の流れにすると、読んだ人が自分に重ねやすい
-  firstFeeling:   pick(["少し緊張していましたが、", "最初は少し不安でしたが、"]),  // 直前の文に「初めて」があるので繰り返さない
-  // これから来る人へのひと言がない時の、初めての人向けの締め
-  firstRec:       "初めての方でも安心して利用できると思います。",
-  closing:        pick(["また機会があれば利用したいと思います。", "また何かあればお願いしたいです。", "次も利用させていただきます。"]),
-};
+let W = {};      // 文のパーツの言い回し
+let V = {};      // 項目ごとに選んだ言い回し
+function reroll() {
+  W = {
+    firstWithItem:  pick(["{items}を売りたくて、初めて利用しました。", "今回初めて、{items}の買取をお願いしました。", "{items}を売ろうと思い、初めてお店に行きました。", "初めての利用です。{items}を持ち込みました。"]),
+    repeatWithItem: pick(["{items}の買取で、また利用させていただきました。", "何度か利用していますが、今回は{items}をお願いしました。", "今回も{items}を持ち込みました。"]),
+    itemOnly:       pick(["{items}の買取をお願いしました。", "{items}を買い取ってもらいました。", "{items}を売りに行きました。", "家にあった{items}を持って行きました。"]),
+    firstOnly:      pick(["今回初めて利用しました。", "初めて利用させていただきました。", "初めてお店に行きました。"]),
+    repeatOnly:     pick(["何度か利用させていただいています。", "いつもお世話になっています。", "また利用しました。"]),
+    firstFeeling:   pick(["少し緊張していましたが、", "最初は少し不安でしたが、", "買取店は慣れていなくて不安でしたが、", ""]),
+    firstRec:       pick(["初めてでも安心して利用できると思います。", "初めての人でも大丈夫だと思います。"]),
+    closing:        pick(["また利用したいと思います。", "また何かあればお願いします。", "次もお願いしようと思います。", "ありがとうございました。", "また来ます！", ""]),
+    shortClosing:   pick(["また来ます！", "ありがとうございました。", "また利用します。", "", ""]),
+    swapShort:      Math.random() < 0.5,
+    useRec:         Math.random() < 0.5,   // 「これから来る人へ」は半分の確率でだけ入れる（毎回入ると宣伝っぽくなる）
+  };
+  V = {};
+  CONFIG.points.forEach(p => {
+    V[p.label] = { mid: pick(p.mids), end: pick(p.ends), short: pick(p.shorts), rec: pick(p.recs) };
+  });
+  document.getElementById("ownQ").textContent = pick(CONFIG.questions);
+}
 
 // ["A","B","C"] → "A、BとC"
 function joinItems(list) {
@@ -233,74 +344,96 @@ function joinItems(list) {
   return list.slice(0, -1).join("、") + "と" + list[list.length - 1];
 }
 
-// 文頭に来たら「も」→「が」にする主語（「古い物も」「わからないことも」は「も」のままが自然なので入れない）
-const FIRST_SUBJECTS = /^(スタッフの方の対応|待ち時間|お店|査定|店内)も/;
+// 文頭に来たら「〜も」→「〜が」にする主語（「古い物も」「わからないことも」は「も」のままが自然なので入れない）
+const FIRST_SUBJECTS = /^(スタッフの方の対応|スタッフの方|待ち時間|お店の雰囲気|お店の中|お店|査定|店内)も/;
 
 // 「〜で、〜でした。」のように2つずつ文をつなぐ（長すぎる1文にしない）
-function joinPoints(points) {
+function joinPoints(labels) {
   const sentences = [];
-  for (let i = 0; i < points.length; i += 2) {
-    const pair = points.slice(i, i + 2);
-    let s = pair.length === 2 ? `${pair[0].mid}、${pair[1].end}。` : `${pair[0].end}。`;
-    if (i === 0) s = s.replace(FIRST_SUBJECTS, "$1が"); // 文頭の「〜も」を「〜が」に
+  for (let i = 0; i < labels.length; i += 2) {
+    const pair = labels.slice(i, i + 2);
+    let s = pair.length === 2 ? `${V[pair[0]].mid}、${V[pair[1]].end}。` : `${V[pair[0]].end}。`;
+    if (i === 0) s = s.replace(FIRST_SUBJECTS, "$1が");
     sentences.push(s);
   }
   return sentences.join("");
 }
 
-function buildText(sel) {
+// 文末に句読点がなければ「。」をつける
+const endPunct = t => (t && !/[。！!？?♪）)」]$/.test(t)) ? t + "。" : t;
+
+// ひとことモード：選んだ項目（最大2つ）の短い一文だけ
+function buildShort(sel) {
+  const labels = sel.point.slice(0, 2);
+  if (!labels.length) return "";
+  const ordered = W.swapShort ? [...labels].reverse() : labels;   // 並び順もときどき入れ替える
+  return ordered.map(l => V[l].short).join("") + W.shortClosing;
+}
+
+// くわしくモード：きっかけ → 体験 →（ご自身の言葉）→（これから来る人へ）→ 締め
+function buildDetail(sel, own) {
   const items = sel.item.filter(x => x !== "その他");
   const itemText = items.length ? joinItems(items) : (sel.item.length ? "手持ちの品" : "");
   const first = sel.visit === "初めて";
 
-  // ① きっかけ：何を売りに来たか
   let opening = "";
   if (itemText) {
-    const t = first ? WORDING.firstWithItem : sel.visit ? WORDING.repeatWithItem : WORDING.itemOnly;
+    const t = first ? W.firstWithItem : sel.visit ? W.repeatWithItem : W.itemOnly;
     opening = t.replace("{items}", itemText);
   } else if (sel.visit) {
-    opening = first ? WORDING.firstOnly : WORDING.repeatOnly;
+    opening = first ? W.firstOnly : W.repeatOnly;
   }
 
-  // ② 体験：良かったこと（初めての人は「不安だったけど」から始める）
-  const points = CONFIG.points.filter(p => sel.point.includes(p.label));
-  let body = joinPoints(points);
-  if (first && body) body = WORDING.firstFeeling + body;
+  // 選んだ順に並べる（人によって順番が変わるので、文章の形もばらける）
+  const labels = sel.point;
+  let body = joinPoints(labels);
+  if (first && body) body = W.firstFeeling + body;
 
-  // ③ これから来る人へのひと言：選ばれた中で一番優先度の高いものを1つだけ
   let rec = "";
-  if (points.length) {
-    rec = [...points].sort((a, b) => a.rp - b.rp)[0].rec;
-    if (first && rec === CONFIG.points.find(p => p.label === "対応が親切").rec) rec = WORDING.firstRec;
+  if (labels.length && W.useRec) {
+    const top = [...labels].sort((a, b) => CONFIG.points.find(p => p.label === a).rp - CONFIG.points.find(p => p.label === b).rp)[0];
+    rec = (first && top === "対応が親切") ? W.firstRec : V[top].rec;
   }
-
-  // ④ 締め：良かった点を選んだ人だけ
-  const closing = points.length ? WORDING.closing : "";
-  return opening + body + rec + closing;
+  const closing = (labels.length || own) ? W.closing : "";
+  return opening + body + endPunct(own) + rec + closing;
 }
 
-/* ---- ヒントのボタンを作る ---- */
+/* ---- 画面の動き ---- */
 document.getElementById("storeName").textContent = CONFIG.storeName;
 const textarea = document.getElementById("review");
+const ownInput = document.getElementById("own");
 const selected = { visit: "", item: [], point: [] };
+let mode = "short";
 let lastGenerated = "";
 
-function refresh() {
-  // お客様が自分で文章を直していたら、勝手に上書きしない
-  if (textarea.value !== lastGenerated && textarea.value.trim() !== "") {
+function build() {
+  return mode === "short" ? buildShort(selected) : buildDetail(selected, ownInput.value.trim());
+}
+
+// quiet=true のときは、お客様が手で直した文章があれば何もしない（確認も出さない）
+function refresh(quiet) {
+  const edited = textarea.value !== lastGenerated && textarea.value.trim() !== "";
+  if (edited) {
+    if (quiet) return;
     if (!confirm("入力した文章を、選んだ内容で作り直しますか？\n（キャンセルすると今の文章を残します）")) return;
   }
-  lastGenerated = buildText(selected);
+  lastGenerated = build();
   textarea.value = lastGenerated;
   fitHeight();
 }
 
-// 入力欄を文章の長さに合わせて伸ばす（スクロールしなくても全文が読めるように）
 function fitHeight() {
+  const min = mode === "short" ? 110 : 200;
   textarea.style.height = "auto";
-  textarea.style.height = Math.max(220, textarea.scrollHeight + 4) + "px";
+  textarea.style.height = Math.max(min, textarea.scrollHeight + 4) + "px";
 }
 textarea.addEventListener("input", fitHeight);
+ownInput.addEventListener("input", () => refresh(true));
+
+function updatePointChips() {
+  document.querySelectorAll('.chips[data-group="point"] .chip').forEach(c =>
+    c.classList.toggle("on", selected.point.includes(c.textContent)));
+}
 
 function makeChips(group, labels, single) {
   const box = document.querySelector(`.chips[data-group="${group}"]`);
@@ -312,18 +445,37 @@ function makeChips(group, labels, single) {
         selected[group] = selected[group] === label ? "" : label;
         box.querySelectorAll(".chip").forEach(c => c.classList.toggle("on", c.textContent === selected[group]));
       } else {
-        b.classList.toggle("on");
         const list = selected[group];
-        b.classList.contains("on") ? list.push(label) : list.splice(list.indexOf(label), 1);
+        if (list.includes(label)) list.splice(list.indexOf(label), 1);
+        else {
+          list.push(label);
+          // ひとことモードは2つまで。3つ目を押したら一番古いものを外す
+          if (group === "point" && mode === "short" && list.length > 2) list.shift();
+        }
+        if (group === "point") updatePointChips(); else b.classList.toggle("on", list.includes(label));
       }
       refresh();
     };
     box.appendChild(b);
   });
 }
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll(".mode").forEach(b => b.classList.toggle("on", b.dataset.mode === m));
+  document.querySelectorAll(".detail-only").forEach(el => el.hidden = m !== "detail");
+  document.querySelectorAll(".short-only").forEach(el => el.hidden = m !== "short");
+  if (m === "short" && selected.point.length > 2) { selected.point = selected.point.slice(0, 2); updatePointChips(); }
+  refresh();
+}
+document.querySelectorAll(".mode").forEach(b => b.onclick = () => setMode(b.dataset.mode));
+document.getElementById("reroll").onclick = () => { reroll(); refresh(); };
+
+reroll();
 makeChips("visit", CONFIG.visits, true);
 makeChips("item",  CONFIG.items);
 makeChips("point", CONFIG.points.map(p => p.label));
+setMode("short");
 
 /* ---- Googleへ ---- */
 const toast = document.getElementById("toast");
