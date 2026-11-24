@@ -361,13 +361,28 @@ const CONFIG = {
   //     beforeBody  … 良かった点の前。後ろに「でも、」をつけて体験へつなぐ（不安だったこと）
   //     afterBody   … 良かった点の後（スタッフ・お店のこと）
   //   ex: 入力欄に薄く出す記入例（文の形をまねしてもらいやすい）
-  questions: [
-    { q: "売ろうと思ったきっかけは？",          ex: "例：実家の片付けをしていて",       pos: "start" },
-    { q: "その品物にはどんな思い出がありますか？", ex: "例：祖父の形見の時計でした",       pos: "afterOpening" },
-    { q: "お店に来る前、不安だったことは？",      ex: "例：買取は初めてで緊張していました", pos: "beforeBody" },
-    { q: "対応したスタッフはどうでしたか？",      ex: "例：担当の方がとても話しやすかったです", pos: "afterBody" },
-    { q: "お店の場所や駐車場はどうでしたか？",    ex: "例：駐車場に停めやすかったです",     pos: "afterBody" },
-  ],
+  //   {item} は選んだ品物の言葉（品物が1つの時）に置き換わる
+  //   どの質問を出すかは、上で選んだ項目から決める（chooseQuestion を参照）
+  questions: {
+    trigger:       { q: "売ろうと思ったきっかけは？",            ex: "例：実家の片付けをしていて",              pos: "start" },
+    triggerIhin:   { q: "売ろうと思ったきっかけは？",            ex: "例：母の遺品を整理していて",              pos: "start" },
+    triggerBroken: { q: "売ろうと思ったきっかけは？",            ex: "例：壊れて使わなくなった{item}を整理したくて", pos: "start" },
+    memory:        { q: "その{item}にはどんな思い出がありますか？", ex: "例：長年大事にしていた{item}でした",     pos: "afterOpening" },
+    worry:         { q: "お店に来る前、不安だったことは？",        ex: "例：買取は初めてで緊張していました",      pos: "beforeBody" },
+    worryPush:     { q: "お店に来る前、不安だったことは？",        ex: "例：しつこく勧められないか心配でした",    pos: "beforeBody" },
+    staff:         { q: "対応したスタッフはどうでしたか？",        ex: "例：担当の方がとても話しやすかったです",  pos: "afterBody" },
+    place:         { q: "お店の場所や駐車場はどうでしたか？",      ex: "例：駐車場に停めやすかったです",          pos: "afterBody" },
+  },
+  // 「思い出」の記入例を品物ごとに変える（ないものは上の memory の例を使う）
+  memoryEx: {
+    "時計": "例：祖父の形見の{item}でした",
+    "着物": "例：母が大切にしていた{item}でした",
+    "金・プラチナ": "例：昔プレゼントでもらった物でした",
+    "ジュエリー・宝石": "例：昔プレゼントでもらった物でした",
+    "古銭・記念硬貨": "例：父が集めていた物でした",
+    "切手": "例：父が集めていた物でした",
+    "骨董品": "例：祖父の代から家にあった物でした",
+  },
 };
 
 /* =========================================================
@@ -402,18 +417,38 @@ function reroll() {
   });
 }
 
-// 質問は開いた時に1回だけ決める（「別の言い方にする」で質問が変わると、答えとずれるため）
-// 再読み込みしても同じ質問になるよう、番号を一時保存する
-let QUESTION;
-(function chooseQuestion() {
-  let i = -1;
-  try { i = parseInt(sessionStorage.getItem("review-q"), 10); } catch (_) {}
-  if (!(i >= 0 && i < CONFIG.questions.length)) i = Math.floor(Math.random() * CONFIG.questions.length);
-  try { sessionStorage.setItem("review-q", String(i)); } catch (_) {}
-  QUESTION = CONFIG.questions[i];
+/* ---- 「あなたの言葉でひとこと」の質問と記入例 ----
+   上で選んだ項目に合わせて、答えやすい質問を出す（上の行ほど優先）
+   ・一言を書き始めたら質問は固定（質問と答えがずれないように）
+   ・何も当てはまらない時は、開いた時にランダムで決めた質問 */
+const Q_KEY = "review-q2";
+const DEFAULT_Q = pick(["trigger", "worry", "staff", "place"]);
+let QUESTION = null;
+function chooseQuestion(sel) {
+  const has = l => sel.point.includes(l);
+  const items = sel.item.filter(x => x !== "その他");
+  const one = items.length === 1 ? items[0] : null;            // 品物が1つだけの時
+  const word = one || "";   // 質問ではボタンの表示（「金・プラチナ」等）をそのまま使う（短く分かりやすく）
+  const Q = CONFIG.questions;
+  let key, ex;
+  if (has("遺品整理の相談"))                                     key = "triggerIhin";
+  else if (has("壊れた物も買取"))                                key = "triggerBroken";
+  else if (has("無理に勧めない") || has("査定だけでもOK"))       key = "worryPush";
+  else if (sel.visit === "初めて")                               key = "worry";
+  else if (one)                                                  { key = "memory"; ex = CONFIG.memoryEx[one]; }
+  else if (["対応が親切", "相談しやすい", "扱いが丁寧", "説明が丁寧"].some(has)) key = "staff";
+  else if (["待ち時間が短い", "入りやすい", "店内が清潔"].some(has))           key = "place";
+  else                                                           key = DEFAULT_Q;
+  const base = Q[key];
+  const put = t => t.replace(/\{item\}/g, word || "物");
+  return { key, q: put(base.q), ex: put(ex || base.ex), pos: base.pos };
+}
+function updateQuestion() {
+  if (QUESTION && ownValue()) return;                         // 書き始めたら固定
+  QUESTION = chooseQuestion(selected);
   document.querySelectorAll(".ownQ").forEach(el => el.textContent = QUESTION.q);
   document.querySelectorAll(".own").forEach(el => el.placeholder = QUESTION.ex);
-})();
+}
 
 // ["A","B","C"] → "A、BとC"
 function joinItems(list) {
@@ -566,6 +601,7 @@ function build() {
 
 // quiet=true のときは、お客様が手で直した文章があれば何もしない（確認も出さない）
 function refresh(quiet) {
+  updateQuestion();   // 選んだ項目に合わせて質問・記入例を更新（書き始めていれば固定のまま）
   const edited = textarea.value !== lastGenerated && textarea.value.trim() !== "";
   if (edited) {
     if (quiet) return;
@@ -588,14 +624,27 @@ textarea.addEventListener("input", fitHeight);
 const OWN_KEY = "review-own";
 function syncOwn(src) {
   ownInputs.forEach(other => { if (other !== src) other.value = src.value; });
-  try { sessionStorage.setItem(OWN_KEY, src.value); } catch (_) { /* 保存できない環境でも動く */ }
+  try {
+    sessionStorage.setItem(OWN_KEY, src.value);
+    // 一言と一緒に「どの質問への答えか」も保存（再読み込みしても質問と答えがずれない）
+    if (src.value.trim() && QUESTION) sessionStorage.setItem(Q_KEY, JSON.stringify(QUESTION));
+    else sessionStorage.removeItem(Q_KEY);
+  } catch (_) { /* 保存できない環境でも動く */ }
   refresh(true);
 }
 ownInputs.forEach(inp => ["input", "compositionend", "change"].forEach(ev =>
   inp.addEventListener(ev, () => syncOwn(inp))));
 try {
   const saved = sessionStorage.getItem(OWN_KEY);
-  if (saved) ownInputs.forEach(inp => inp.value = saved);
+  const savedQ = JSON.parse(sessionStorage.getItem(Q_KEY) || "null");
+  if (saved) {
+    ownInputs.forEach(inp => inp.value = saved);
+    if (savedQ && savedQ.pos) {
+      QUESTION = savedQ;
+      document.querySelectorAll(".ownQ").forEach(el => el.textContent = QUESTION.q);
+      document.querySelectorAll(".own").forEach(el => el.placeholder = QUESTION.ex);
+    }
+  }
 } catch (_) {}
 
 function updatePointChips() {
