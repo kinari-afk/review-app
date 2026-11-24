@@ -137,16 +137,16 @@
       <button type="button" class="mode" data-mode="short"><b>ひとことで</b><small>サッと一言だけ</small></button>
       <button type="button" class="mode" data-mode="detail"><b>くわしく</b><small>体験をしっかり書く</small></button>
     </div>
-    <p class="muted short-only" style="margin-top:12px">印象に残ったことを<b>1〜2個</b>タップしてください。文章なしで<b>星だけの投稿</b>もできます。</p>
+    <p class="muted short-only" style="margin-top:12px"><b>品物</b>と、印象に残ったことを<b>1〜2個</b>タップしてください。文章なしで<b>星だけの投稿</b>もできます。</p>
     <p class="muted detail-only" style="margin-top:12px">当てはまるものをタップすると下書きができます。ご自身の言葉で自由に書き換えてください。</p>
 
     <div class="detail-only">
       <div class="label">ご利用は</div>
       <div class="chips" data-group="visit"></div>
-
-      <div class="label">お売りいただいた品物 <small>（いくつでも）</small></div>
-      <div class="chips" data-group="item"></div>
     </div>
+
+    <div class="label">お売りいただいた品物 <small>（いくつでも）</small></div>
+    <div class="chips" data-group="item"></div>
 
     <div class="label">印象に残ったこと <small class="short-only">（2つまで）</small><small class="detail-only">（いくつでも）</small></div>
     <div class="chips grid" data-group="point"></div>
@@ -191,9 +191,24 @@ const CONFIG = {
   // ご利用回数（1つだけ選べる）
   visits: ["初めて", "2回目以上"],
   // 品物（複数選べる。「その他」は文章に品名を出さない）
+  //   words: 文章の中で使う言葉。Googleで検索されやすいキーワード（貴金属・時計など）を入れる。
+  //          複数あるときは開くたびにどれか1つを使う。お客様が売っていない物を書かないよう、
+  //          ボタンの意味と同じ範囲の言葉だけにする（例：「金・プラチナ」→「貴金属」はOK）
   items: [
-    "ブランド品", "金・プラチナ", "時計", "ジュエリー・宝石", "切手", "古銭・記念硬貨",
-    "お酒", "金券・商品券", "骨董品", "着物", "食器・陶磁器", "スマホ・カメラ", "その他",
+    { label: "ブランド品",       words: ["ブランド品", "ブランド品"] },
+    { label: "金・プラチナ",     words: ["貴金属", "金・プラチナなどの貴金属"] },
+    { label: "時計",             words: ["時計", "腕時計"] },
+    { label: "ジュエリー・宝石", words: ["ジュエリー", "宝石・ジュエリー"] },
+    { label: "切手",             words: ["切手"] },
+    { label: "古銭・記念硬貨",   words: ["古銭・記念硬貨"] },
+    { label: "お酒",             words: ["お酒"] },
+    { label: "金券・商品券",     words: ["金券"] },
+    { label: "骨董品",           words: ["骨董品"] },
+    { label: "着物",             words: ["着物"] },
+    { label: "食器・陶磁器",     words: ["食器・陶磁器"] },
+    { label: "スマホ",           words: ["スマホ"] },
+    { label: "カメラ",           words: ["カメラ"] },
+    { label: "その他",           words: [] },
   ],
   // 印象に残ったこと
   // ★ 画面にはこの並び順のまま表示される。選んでほしいものほど上に書く。
@@ -205,7 +220,7 @@ const CONFIG = {
   points: [
     // --- 上位：お店として特に伝わってほしいこと ---
     { label: "説明が丁寧", rp: 6,
-      mids: ["査定の内容を一つずつ丁寧に説明していただき", "査定額の理由をわかりやすく説明してくれて", "なぜこの金額なのかをきちんと説明してもらえて"],
+      mids: ["査定の内容を一つずつ丁寧に説明していただき", "{it|品物}の査定額の理由をわかりやすく説明してくれて", "なぜこの金額なのかをきちんと説明してもらえて"],
       ends: ["査定の内容を一つずつ丁寧に説明していただけました", "査定額の理由をわかりやすく説明してくれました", "なぜこの金額なのか、きちんと説明してもらえて納得できました"],
       shorts: ["説明が丁寧でわかりやすかったです。", "査定の説明がすごく丁寧でした！", "金額の理由まで説明してくれて納得でした。"],
       recs: ["初めてでも納得して売れると思います。", "買取が初めての人にもいいと思います。"] },
@@ -216,13 +231,13 @@ const CONFIG = {
       recs: ["安心して相談できるお店です。"] },
     { label: "想像より高額", rp: 5,
       mids: ["思っていたより高い金額をつけていただき", "予想以上の金額になって", "想像していたより高く買い取ってもらえて"],
-      ends: ["思っていたより高い金額がついて嬉しかったです", "予想以上の金額になってびっくりしました", "想像していたより高く買い取ってもらえました"],
-      shorts: ["思ってたより高く売れて嬉しかったです！", "予想以上の金額でした。", "想像より高値がついてびっくりしました。"],
+      ends: ["思っていたより高い金額がついて嬉しかったです", "予想以上の金額になってびっくりしました", "{it|品物}を想像していたより高く買い取ってもらえました"],
+      shorts: ["{it|品物}が思ってたより高く売れて嬉しかったです！", "予想以上の金額でした。", "{it|品物}に想像より高値がついてびっくりしました。"],
       recs: ["迷っている物があるなら一度見てもらうといいと思います。", "売るか迷っている人は一度査定してもらうといいです。"] },
     { label: "壊れた物も買取", rp: 1,
-      mids: ["壊れて使えなくなった物まで買い取っていただき", "壊れている物でも値段をつけてくれて", "動かなくなった物まで買い取ってもらえて"],
-      ends: ["壊れて使えなくなった物まで買い取っていただけました", "壊れている物でもちゃんと値段をつけてくれました", "動かなくなった物まで買い取ってもらえて助かりました"],
-      shorts: ["壊れていても買い取ってもらえました！", "壊れた物にも値段がついて驚きました。", "捨てようと思っていた物が売れて助かりました。"],
+      mids: ["壊れて使えなくなった{it|物}まで買い取っていただき", "壊れている{it|物}でも値段をつけてくれて", "動かなくなった物まで買い取ってもらえて"],
+      ends: ["壊れて使えなくなった{it|物}まで買い取っていただけました", "壊れている{it|物}でもちゃんと値段をつけてくれました", "動かなくなった物まで買い取ってもらえて助かりました"],
+      shorts: ["壊れた{it|物}でも買い取ってもらえました！", "壊れた{it|物}にも値段がついて驚きました。", "捨てようと思っていた{it|物}が売れて助かりました。"],
       recs: ["捨てる前に一度持っていくのがおすすめです。", "壊れているからと諦めずに相談してみてください。"] },
     { label: "相談しやすい", rp: 8,
       mids: ["わからないことも気軽に相談でき", "質問にも嫌な顔せず答えてくれて", "気になることを何でも聞きやすくて"],
@@ -235,9 +250,9 @@ const CONFIG = {
       shorts: ["無理に勧められず安心でした。", "しつこくなくて良かったです。", "押し売り感がなくて安心しました。"],
       recs: ["まずは金額だけ聞いてみたい人でも行きやすいと思います。"] },
     { label: "扱いが丁寧", rp: 10,
-      mids: ["大切な品物を丁寧に扱っていただき", "品物を丁寧に扱ってくれて", "思い出の品も大事に扱ってもらえて"],
-      ends: ["大切な品物を丁寧に扱っていただけました", "品物を丁寧に扱ってくれました", "思い出の品も大事に扱ってもらえて嬉しかったです"],
-      shorts: ["品物を丁寧に扱ってくれました。", "扱いが丁寧で好感が持てました。", "大事な物を丁寧に見てもらえました。"],
+      mids: ["大切な{it|品物}を丁寧に扱っていただき", "品物を丁寧に扱ってくれて", "思い出の品も大事に扱ってもらえて"],
+      ends: ["大切な{it|品物}を丁寧に扱っていただけました", "品物を丁寧に扱ってくれました", "思い出の品も大事に扱ってもらえて嬉しかったです"],
+      shorts: ["{it|品物}を丁寧に扱ってくれました。", "扱いが丁寧で好感が持てました。", "大事な{it|物}を丁寧に見てもらえました。"],
       recs: ["思い入れのある物でも安心して任せられます。"] },
     { label: "相場がわかった", rp: 7,
       mids: ["相場についてわかりやすく教えていただき", "今の相場も教えてくれて", "相場の話も聞けて"],
@@ -271,14 +286,14 @@ const CONFIG = {
       shorts: ["少しだけでも快く見てくれました。", "数点だけでも大丈夫でした。", "少量でも嫌な顔されませんでした。"],
       recs: ["少しだけ売りたい時でも気軽に持ち込めます。"] },
     { label: "古い物も査定", rp: 1.5,
-      mids: ["古い物や傷のある物も一つずつ見ていただき", "古くて傷のある物まで見てくれて", "昔の物も一つずつ確認してもらえて"],
-      ends: ["古い物や傷のある物も一つずつ見ていただけました", "古くて傷のある物まで見てくれました", "昔の物も一つずつ確認してもらえました"],
-      shorts: ["古い物でもちゃんと見てくれました。", "傷がある物も査定してもらえました。", "昔の物も一つずつ見てもらえました。"],
+      mids: ["古い物や傷のある物も一つずつ見ていただき", "古くて傷のある{it|物}まで見てくれて", "昔の物も一つずつ確認してもらえて"],
+      ends: ["古い物や傷のある物も一つずつ見ていただけました", "古くて傷のある{it|物}まで見てくれました", "昔の物も一つずつ確認してもらえました"],
+      shorts: ["古い{it|物}でもちゃんと見てくれました。", "傷がある{it|物}も査定してもらえました。", "昔の物も一つずつ見てもらえました。"],
       recs: ["古い物でも諦めずに一度見てもらうといいと思います。"] },
     { label: "他店より高い", rp: 5.5,
       mids: ["他のお店よりも高い金額を提示していただき", "他店より高い金額を出してくれて", "よそで聞いた金額より高くて"],
-      ends: ["他のお店よりも高い金額を提示していただけました", "他店より高い金額を出してくれました", "よそで聞いた金額より高くて驚きました"],
-      shorts: ["他のお店より高かったです！", "よそより高く売れました。", "他店と比べてこちらが高かったです。"],
+      ends: ["他のお店よりも高い金額を提示していただけました", "{it|品物}に他店より高い金額を出してくれました", "よそで聞いた金額より高くて驚きました"],
+      shorts: ["他のお店より高かったです！", "{it|品物}がよそより高く売れました。", "他店と比べてこちらが高かったです。"],
       recs: ["どこに売るか迷っているなら比べてみるといいです。"] },
     // --- 下位：お店の環境 ---
     { label: "待ち時間が短い", rp: 14,
@@ -328,10 +343,12 @@ function reroll() {
     firstRec:       pick(["初めてでも安心して利用できると思います。", "初めての人でも大丈夫だと思います。"]),
     closing:        pick(["また利用したいと思います。", "また何かあればお願いします。", "次もお願いしようと思います。", "ありがとうございました。", "また来ます！", ""]),
     shortClosing:   pick(["また来ます！", "ありがとうございました。", "また利用します。", "", ""]),
+    shortItem:      pick(["{items}を売りました。", "{items}の買取でお世話になりました。", "{items}を買い取ってもらいました。", "{items}の買取で利用しました。"]),
     swapShort:      Math.random() < 0.5,
     useRec:         Math.random() < 0.5,   // 「これから来る人へ」は半分の確率でだけ入れる（毎回入ると宣伝っぽくなる）
   };
   V = {};
+  CONFIG.items.forEach(it => { V["item:" + it.label] = pick(it.words.length ? it.words : [""]); });
   CONFIG.points.forEach(p => {
     V[p.label] = { mid: pick(p.mids), end: pick(p.ends), short: pick(p.shorts), rec: pick(p.recs) };
   });
@@ -344,6 +361,20 @@ function joinItems(list) {
   return list.slice(0, -1).join("、") + "と" + list[list.length - 1];
 }
 
+// 選んだ品物 → 文章で使う言葉（「その他」は除く）
+const itemWords = sel => sel.item.filter(x => x !== "その他").map(l => V["item:" + l]);
+
+// {it|代わりの言葉} を埋める。品物が1つだけ選ばれていればその言葉、それ以外は代わりの言葉。
+// 同じ品物名を何度も繰り返すと不自然（キーワードの詰め込み）なので、本文中で使うのは1回まで
+let usedIt = false;
+function fill(t, sel) {
+  const ws = itemWords(sel);
+  return t.replace(/\{it\|([^}]*)\}/g, (_, fb) => {
+    if (ws.length === 1 && !usedIt) { usedIt = true; return ws[0]; }
+    return fb;
+  });
+}
+
 // 文頭に来たら「〜も」→「〜が」にする主語（「古い物も」「わからないことも」は「も」のままが自然なので入れない）
 const FIRST_SUBJECTS = /^(スタッフの方の対応|スタッフの方|待ち時間|お店の雰囲気|お店の中|お店|査定|店内)も/;
 
@@ -352,7 +383,7 @@ function joinPoints(labels) {
   const sentences = [];
   for (let i = 0; i < labels.length; i += 2) {
     const pair = labels.slice(i, i + 2);
-    let s = pair.length === 2 ? `${V[pair[0]].mid}、${V[pair[1]].end}。` : `${V[pair[0]].end}。`;
+    let s = pair.length === 2 ? `${fill(V[pair[0]].mid, selected)}、${fill(V[pair[1]].end, selected)}。` : `${fill(V[pair[0]].end, selected)}。`;
     if (i === 0) s = s.replace(FIRST_SUBJECTS, "$1が");
     sentences.push(s);
   }
@@ -363,17 +394,24 @@ function joinPoints(labels) {
 const endPunct = t => (t && !/[。！!？?♪）)」]$/.test(t)) ? t + "。" : t;
 
 // ひとことモード：選んだ項目（最大2つ）の短い一文だけ
+// 品物を選んでいれば、その言葉（貴金属・時計など）が必ず文章に入る
 function buildShort(sel) {
   const labels = sel.point.slice(0, 2);
-  if (!labels.length) return "";
+  const ws = itemWords(sel);
+  usedIt = false;
   const ordered = W.swapShort ? [...labels].reverse() : labels;   // 並び順もときどき入れ替える
-  return ordered.map(l => V[l].short).join("") + W.shortClosing;
+  const body = ordered.map(l => fill(V[l].short, sel)).join("");
+  // 品物名が本文に入らなかった時だけ「〇〇を売りました。」を前につける（同じ言葉を2回続けない）
+  const opening = (ws.length && !usedIt) ? W.shortItem.replace("{items}", joinItems(ws)) : "";
+  if (!opening && !body) return "";
+  return opening + body + (body ? W.shortClosing : "");
 }
 
 // くわしくモード：きっかけ → 体験 →（ご自身の言葉）→（これから来る人へ）→ 締め
 function buildDetail(sel, own) {
-  const items = sel.item.filter(x => x !== "その他");
-  const itemText = items.length ? joinItems(items) : (sel.item.length ? "手持ちの品" : "");
+  const ws = itemWords(sel);
+  const itemText = ws.length ? joinItems(ws) : (sel.item.length ? "手持ちの品" : "");
+  usedIt = false;
   const first = sel.visit === "初めて";
 
   let opening = "";
@@ -473,7 +511,7 @@ document.getElementById("reroll").onclick = () => { reroll(); refresh(); };
 
 reroll();
 makeChips("visit", CONFIG.visits, true);
-makeChips("item",  CONFIG.items);
+makeChips("item",  CONFIG.items.map(i => i.label));
 makeChips("point", CONFIG.points.map(p => p.label));
 setMode("short");
 
