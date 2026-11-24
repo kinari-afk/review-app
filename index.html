@@ -354,13 +354,18 @@ const CONFIG = {
       recs: ["落ち着いて相談できるお店です。"] },
   ],
   // 「くわしく」モードで、お客様自身の言葉を引き出す質問（毎回ちがう質問が出る）
+  //   pos: 答えを文章のどこに入れるか（前後とつながるように質問ごとに決める）
+  //     start       … 書き出しの前（きっかけ）
+  //     afterOpening… 「〇〇を売りました」の直後（品物の話）
+  //     beforeBody  … 良かった点の前。後ろに「でも、」をつけて体験へつなぐ（不安だったこと）
+  //     afterBody   … 良かった点の後（スタッフ・お店のこと）
+  //   ex: 入力欄に薄く出す記入例（文の形をまねしてもらいやすい）
   questions: [
-    "対応したスタッフはどうでしたか？",
-    "売ろうと思ったきっかけは？",
-    "お店に来る前、不安だったことは？",
-    "売ったお金は何に使いますか？",
-    "その品物にはどんな思い出がありますか？",
-    "お店の場所や駐車場はどうでしたか？",
+    { q: "売ろうと思ったきっかけは？",          ex: "例：実家の片付けをしていて",       pos: "start" },
+    { q: "その品物にはどんな思い出がありますか？", ex: "例：祖父の形見の時計でした",       pos: "afterOpening" },
+    { q: "お店に来る前、不安だったことは？",      ex: "例：買取は初めてで緊張していました", pos: "beforeBody" },
+    { q: "対応したスタッフはどうでしたか？",      ex: "例：担当の方がとても話しやすかったです", pos: "afterBody" },
+    { q: "お店の場所や駐車場はどうでしたか？",    ex: "例：駐車場に停めやすかったです",     pos: "afterBody" },
   ],
 };
 
@@ -394,9 +399,20 @@ function reroll() {
   CONFIG.points.forEach(p => {
     V[p.label] = { mid: pick(p.mids), end: pick(p.ends), short: pick(p.shorts), rec: pick(p.recs) };
   });
-  const q = pick(CONFIG.questions);
-  document.querySelectorAll(".ownQ").forEach(el => el.textContent = q);
 }
+
+// 質問は開いた時に1回だけ決める（「別の言い方にする」で質問が変わると、答えとずれるため）
+// 再読み込みしても同じ質問になるよう、番号を一時保存する
+let QUESTION;
+(function chooseQuestion() {
+  let i = -1;
+  try { i = parseInt(sessionStorage.getItem("review-q"), 10); } catch (_) {}
+  if (!(i >= 0 && i < CONFIG.questions.length)) i = Math.floor(Math.random() * CONFIG.questions.length);
+  try { sessionStorage.setItem("review-q", String(i)); } catch (_) {}
+  QUESTION = CONFIG.questions[i];
+  document.querySelectorAll(".ownQ").forEach(el => el.textContent = QUESTION.q);
+  document.querySelectorAll(".own").forEach(el => el.placeholder = QUESTION.ex);
+})();
 
 // ["A","B","C"] → "A、BとC"
 function joinItems(list) {
@@ -437,6 +453,35 @@ function joinPoints(labels) {
 // 文末に句読点がなければ「。」をつける
 const endPunct = t => (t && !/[。！!？?♪）)」]$/.test(t)) ? t + "。" : t;
 
+// お客様の一言を、前後の文（です・ます調）とつながる形に整える。
+// 文章の欄に入る形だけを整え、入力欄の中身（＝アンケートの記録）は書かれたまま。
+// 戻り値の joinNext が true のときは「〜ので、」のように次の文へそのままつなぐ
+function politeOwn(raw, pos) {
+  let t = (raw || "").trim().replace(/[。．.、，,\s]+$/, "");
+  if (!t) return { text: "", joinNext: false };
+  if (/[！!？?♪）)」笑w]$/.test(t)) return { text: t, joinNext: false };       // 「！」などで終わっていればそのまま
+  if (/(ので|から)$/.test(t))        return { text: t + "、", joinNext: true }; // 引っ越すので → 次の文へつなぐ
+  const rules = [
+    [/ていて$/, "ていました"],    // 片付けをしていて → 片付けをしていました
+    [/くて$/,   "かったです"],    // 話しやすくて → 話しやすかったです
+    [/て$/,     "ていました"],    // 引っ越しが決まって → 決まっていました
+    [/だった$/, "でした"],        // 不安だった → 不安でした
+    [/かった$/, "かったです"],    // 停めやすかった → 停めやすかったです
+    [/ていた$/, "ていました"],    // 緊張していた → 緊張していました
+    [/(でした|ました|です|ます|ません)$/, "$1"],   // もう整っている
+    [/い$/,     "いです"],        // 優しい → 優しいです
+  ];
+  for (const [re, rep] of rules) if (re.test(t)) return { text: t.replace(re, rep) + "。", joinNext: false };
+  // 名詞で終わる時（漢字・カタカナ・英数字で終わる）は、質問に合わせて言葉を足す
+  //   きっかけ：母の遺品整理 → 母の遺品整理がきっかけです
+  //   それ以外：大事にしていた物 → 大事にしていた物でした ／ 心配 → 心配でした
+  if (/[一-龯々ァ-ヶーA-Za-z0-9０-９〇]$/.test(t))
+    return { text: t + (pos === "start" ? "がきっかけです" : "でした") + "。", joinNext: false };
+  return { text: t + "。", joinNext: false };                              // それ以外（動詞の言い切り等）は「。」だけ
+}
+// 文の途中には入れられない場合（「〜ので、」で終わる等）は、文として閉じる
+const closeOwn = o => o.joinNext ? o.text.replace(/、$/, "。") : o.text;
+
 // かんたんモード：選んだ項目のうち、最初に押した2つの短い一文だけ（アンケートには全部記録される）
 // 品物を選んでいれば、その言葉（貴金属・時計など）が必ず文章に入る
 function buildShort(sel, own) {
@@ -448,7 +493,15 @@ function buildShort(sel, own) {
   // 品物名が本文に入らなかった時だけ「〇〇を売りました。」を前につける（同じ言葉を2回続けない）
   const opening = (ws.length && !usedIt) ? W.shortItem.replace("{items}", joinItems(ws)) : "";
   if (!opening && !body && !own) return "";
-  return opening + body + endPunct(own) + ((body || own) ? W.shortClosing : "");
+  const o = politeOwn(own, QUESTION.pos);
+  if (!o.text) return opening + body + (body ? W.shortClosing : "");
+  let before = "", after = "";
+  if (QUESTION.pos === "afterBody") after = closeOwn(o);
+  else if (QUESTION.pos === "beforeBody" && body) before = closeOwn(o) + "でも、";   // 不安でした。でも、〜
+  else before = o.joinNext ? o.text : closeOwn(o);
+  // きっかけ（start）は品物の文より前、それ以外は品物の文の後
+  const head = QUESTION.pos === "start" ? before + opening : opening + before;
+  return head + body + after + W.shortClosing;
 }
 
 // くわしくモード：きっかけ → 体験 →（ご自身の言葉）→（これから来る人へ）→ 締め
@@ -473,15 +526,28 @@ function buildDetail(sel, own) {
   // 選んだ順に並べる（人によって順番が変わるので、文章の形もばらける）
   const labels = sel.point;
   let body = joinPoints(labels);
-  if (first && body) body = W.firstFeeling + body;
+  const o = politeOwn(own, QUESTION.pos);
+  // 不安だったことを書いてくれた人は、定型の「少し緊張していましたが、」の代わりに本人の言葉＋「でも、」でつなぐ
+  if (o.text && QUESTION.pos === "beforeBody" && body) body = closeOwn(o) + "でも、" + body;
+  else if (first && body) body = W.firstFeeling + body;
 
   let rec = "";
   if (labels.length && W.useRec) {
     const top = [...labels].sort((a, b) => CONFIG.points.find(p => p.label === a).rp - CONFIG.points.find(p => p.label === b).rp)[0];
     rec = (first && top === "対応が親切") ? W.firstRec : V[top].rec;
   }
-  const closing = (labels.length || own) ? W.closing : "";
-  return opening + body + endPunct(own) + rec + closing;
+  const closing = (labels.length || o.text) ? W.closing : "";
+  let start = "", mid = "", end = "";
+  if (o.text) {
+    if (QUESTION.pos === "start") start = o.joinNext ? o.text : closeOwn(o);       // 実家の片付けをしていました。〇〇を売りに〜
+    else if (QUESTION.pos === "afterOpening") mid = closeOwn(o);                   // 〇〇を売りました。祖父の形見でした。
+    else if (QUESTION.pos === "beforeBody" && !body) mid = closeOwn(o);            // 良かった点がない時は品物の後に
+    else if (QUESTION.pos === "afterBody") end = closeOwn(o);                      // 体験の後に
+  }
+  // 来店経路の一文があれば、いちばん前のまま（その後に、きっかけ→品物…と続く）
+  const routeText = (r && r.phrase && W.useRoute) ? r.phrase : "";
+  const rest = routeText ? opening.slice(routeText.length) : opening;
+  return routeText + start + rest + mid + body + end + rec + closing;
 }
 
 /* ---- 画面の動き ---- */
