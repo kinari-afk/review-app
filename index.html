@@ -515,10 +515,21 @@ function fitHeight() {
   textarea.style.height = Math.max(min, textarea.scrollHeight + 4) + "px";
 }
 textarea.addEventListener("input", fitHeight);
-ownInputs.forEach(inp => inp.addEventListener("input", () => {
-  ownInputs.forEach(other => { if (other !== inp) other.value = inp.value; });   // 画面1と画面2で同じ内容に
+// 「あなたの言葉でひとこと」：画面1と画面2の欄はいつも同じ内容にする
+// ・input だけでなく compositionend / change でも同期（日本語入力の確定直後の取りこぼし対策）
+// ・sessionStorage にも保存し、ページが読み込み直されても（Googleから戻った時など）残す
+const OWN_KEY = "review-own";
+function syncOwn(src) {
+  ownInputs.forEach(other => { if (other !== src) other.value = src.value; });
+  try { sessionStorage.setItem(OWN_KEY, src.value); } catch (_) { /* 保存できない環境でも動く */ }
   refresh(true);
-}));
+}
+ownInputs.forEach(inp => ["input", "compositionend", "change"].forEach(ev =>
+  inp.addEventListener(ev, () => syncOwn(inp))));
+try {
+  const saved = sessionStorage.getItem(OWN_KEY);
+  if (saved) ownInputs.forEach(inp => inp.value = saved);
+} catch (_) {}
 
 function updatePointChips() {
   document.querySelectorAll('.chips[data-group="point"] .chip').forEach(c =>
@@ -591,6 +602,9 @@ function send(data) {
 const screenSurvey = document.getElementById("screenSurvey");
 const screenReview = document.getElementById("screenReview");
 function show(name, push) {
+  // 切り替える直前に、今見ている画面の「ひとこと」をもう一方へ写す（念のため）
+  const from = (screenSurvey.hidden ? screenReview : screenSurvey).querySelector(".own");
+  if (from) syncOwn(from);
   screenSurvey.hidden = name !== "survey";
   screenReview.hidden = name !== "review";
   window.scrollTo(0, 0);
