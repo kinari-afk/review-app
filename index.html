@@ -7,6 +7,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
 <title>口コミのお願い｜買取大吉 川内大小路店</title>
+<!-- ファビコン：買取大吉ロゴマーク単体（青ベース）。VIの余白規定（20%以上）をとって配置 -->
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#2f3185">
 <style>
   /* ===== 色の設定（ここを変えると全体の色が変わります） ===== */
   :root {
@@ -156,11 +161,9 @@
       <div class="label">印象に残ったこと <small>（いくつでも）</small></div>
       <div class="chips grid" data-group="point"></div>
 
-      <div class="detail-only">
-        <div class="label">あなたの言葉でひとこと <small>（任意）</small></div>
-        <p class="muted" style="margin:-4px 0 6px">例えば… <span id="ownQ"></span></p>
-        <input id="own" class="own" type="text" maxlength="200" placeholder="思ったことを、そのまま一言どうぞ">
-      </div>
+      <div class="label">あなたの言葉でひとこと <small>（任意）</small></div>
+      <p class="muted" style="margin:-4px 0 6px">例えば… <span class="ownQ"></span></p>
+      <input class="own" type="text" maxlength="200" placeholder="思ったことを、そのまま一言どうぞ">
 
       <p style="margin:24px 0 0"><button type="button" class="btn" id="toReview">アンケートに答える</button></p>
     </section>
@@ -176,6 +179,10 @@
 
     <section class="card">
       <h2><span class="num">2</span>Googleで口コミを書く</h2>
+      <div class="label">あなたの言葉でひとこと <small>（任意・文章に入ります）</small></div>
+      <p class="muted" style="margin:-4px 0 6px">例えば… <span class="ownQ"></span></p>
+      <input class="own" type="text" maxlength="200" placeholder="思ったことを、そのまま一言どうぞ">
+
       <div class="label">投稿する文章 <small>（自由に書き換えてください）</small></div>
       <textarea id="review" placeholder="ご自由にお書きください。文章なしで星だけの投稿もできます。"></textarea>
       <button type="button" id="reroll" class="reroll">🔄 別の言い方にする</button>
@@ -388,7 +395,8 @@ function reroll() {
   CONFIG.points.forEach(p => {
     V[p.label] = { mid: pick(p.mids), end: pick(p.ends), short: pick(p.shorts), rec: pick(p.recs) };
   });
-  document.getElementById("ownQ").textContent = pick(CONFIG.questions);
+  const q = pick(CONFIG.questions);
+  document.querySelectorAll(".ownQ").forEach(el => el.textContent = q);
 }
 
 // ["A","B","C"] → "A、BとC"
@@ -432,7 +440,7 @@ const endPunct = t => (t && !/[。！!？?♪）)」]$/.test(t)) ? t + "。" : t
 
 // かんたんモード：選んだ項目のうち、最初に押した2つの短い一文だけ（アンケートには全部記録される）
 // 品物を選んでいれば、その言葉（貴金属・時計など）が必ず文章に入る
-function buildShort(sel) {
+function buildShort(sel, own) {
   const labels = sel.point.slice(0, 2);
   const ws = itemWords(sel);
   usedIt = false;
@@ -440,8 +448,8 @@ function buildShort(sel) {
   const body = ordered.map(l => fill(V[l].short, sel)).join("");
   // 品物名が本文に入らなかった時だけ「〇〇を売りました。」を前につける（同じ言葉を2回続けない）
   const opening = (ws.length && !usedIt) ? W.shortItem.replace("{items}", joinItems(ws)) : "";
-  if (!opening && !body) return "";
-  return opening + body + (body ? W.shortClosing : "");
+  if (!opening && !body && !own) return "";
+  return opening + body + endPunct(own) + ((body || own) ? W.shortClosing : "");
 }
 
 // くわしくモード：きっかけ → 体験 →（ご自身の言葉）→（これから来る人へ）→ 締め
@@ -480,13 +488,14 @@ function buildDetail(sel, own) {
 /* ---- 画面の動き ---- */
 document.getElementById("storeName").textContent = CONFIG.storeName;
 const textarea = document.getElementById("review");
-const ownInput = document.getElementById("own");
+const ownInputs = document.querySelectorAll(".own");
+const ownValue = () => ownInputs[0].value.trim();
 const selected = { visit: "", route: [], item: [], point: [] };
 let mode = "short";
 let lastGenerated = "";
 
 function build() {
-  return mode === "short" ? buildShort(selected) : buildDetail(selected, ownInput.value.trim());
+  return mode === "short" ? buildShort(selected, ownValue()) : buildDetail(selected, ownValue());
 }
 
 // quiet=true のときは、お客様が手で直した文章があれば何もしない（確認も出さない）
@@ -507,7 +516,10 @@ function fitHeight() {
   textarea.style.height = Math.max(min, textarea.scrollHeight + 4) + "px";
 }
 textarea.addEventListener("input", fitHeight);
-ownInput.addEventListener("input", () => refresh(true));
+ownInputs.forEach(inp => inp.addEventListener("input", () => {
+  ownInputs.forEach(other => { if (other !== inp) other.value = inp.value; });   // 画面1と画面2で同じ内容に
+  refresh(true);
+}));
 
 function updatePointChips() {
   document.querySelectorAll('.chips[data-group="point"] .chip').forEach(c =>
@@ -560,13 +572,18 @@ history.replaceState({ screen: "survey" }, "");
      mode:"no-cors" ＋ text/plain で送る（返事は読めないが、記録はされる）
    ・送信の成否で画面を止めない（お客様を待たせない） */
 const answerId = Array.from(crypto.getRandomValues(new Uint8Array(8)), b => b.toString(16).padStart(2, "0")).join("");
+// sendBeacon は「ページを離れる直前の記録」のための仕組みで、Googleへ移動しても送信が途切れにくい
 function send(data) {
   if (!CONFIG.sheetUrl) return;
+  const body = JSON.stringify({ id: answerId, ...data });
+  try {
+    const blob = new Blob([body], { type: "text/plain;charset=utf-8" });
+    if (navigator.sendBeacon && navigator.sendBeacon(CONFIG.sheetUrl, blob)) return;
+  } catch (_) { /* 下の fetch で送る */ }
   try {
     fetch(CONFIG.sheetUrl, {
       method: "POST", mode: "no-cors", keepalive: true,
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ id: answerId, ...data }),
+      headers: { "Content-Type": "text/plain;charset=utf-8" }, body,
     });
   } catch (_) { /* 送れなくても画面は進める */ }
 }
@@ -584,7 +601,7 @@ function show(name, push) {
 window.addEventListener("popstate", e => show((e.state && e.state.screen) || "survey", false));
 
 document.getElementById("toReview").onclick = () => {
-  const answered = selected.visit || selected.route.length || selected.item.length || selected.point.length || ownInput.value.trim();
+  const answered = selected.visit || selected.route.length || selected.item.length || selected.point.length || ownValue();
   if (answered) {
     send({
       type: "survey",
@@ -593,7 +610,7 @@ document.getElementById("toReview").onclick = () => {
       route: selected.route.join("、"),
       items: selected.item.join("、"),
       points: selected.point.join("、"),
-      own: ownInput.value.trim(),
+      own: ownValue(),
       text: textarea.value.trim(),
     });
   }
@@ -606,15 +623,15 @@ document.getElementById("back").onclick = e => { e.preventDefault(); history.bac
 const toast = document.getElementById("toast");
 document.getElementById("goGoogle").onclick = async (e) => {
   e.preventDefault();
-  send({ type: "google", text: textarea.value.trim() });   // 「Googleへ進んだ」を記録
   const text = textarea.value.trim();
+  send({ type: "google", own: ownValue(), text });   // 「Google口コミボタンを押した」を記録
   if (text) {
     try {
       await navigator.clipboard.writeText(text);
       toast.classList.add("show");
-      await new Promise(r => setTimeout(r, 900));
     } catch (_) { /* コピーできなくても投稿画面は開く */ }
   }
+  await new Promise(r => setTimeout(r, 900));   // 送信とコピー表示のための少しの待ち時間
   location.href = CONFIG.reviewUrl;
 };
 </script>

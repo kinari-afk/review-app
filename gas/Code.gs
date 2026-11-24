@@ -10,14 +10,19 @@
  *
  * ページから届くデータ
  *   type: "survey" … アンケートに答えた → 1行追加
- *   type: "google" … 「Googleで口コミを書く」を押した → 同じIDの行に ✓ をつける
+ *   type: "google" … 「Googleで口コミを書く」を押した → 同じIDの行を「押した」にする
+ *
+ * ★ このファイルを直したら：[デプロイ] → [デプロイを管理] → 鉛筆 → バージョン「新バージョン」→ [デプロイ]
+ *   （保存しただけでは反映されない。URLは変わらない）
  */
 
 const SHEET_NAME = 'アンケート';
 const HEADERS = ['日時', 'ID', '答え方', 'ご利用', '来店経路', '品物', '印象に残ったこと',
-                 'あなたの言葉', '下書きの文章', 'Googleへ進んだ', 'コピーした文章'];
-const COL_GOOGLE = 10;   // 「Googleへ進んだ」の列（J列）
-const COL_FINAL  = 11;   // 「コピーした文章」の列（K列）
+                 'あなたの言葉', '下書きの文章', 'Google口コミボタン', 'ボタンを押した日時', 'コピーした文章'];
+const COL_OWN     = 8;    // 「あなたの言葉」（H列）
+const COL_GOOGLE  = 10;   // 「Google口コミボタン」押した／押していない（J列）
+const COL_PRESSED = 11;   // 「ボタンを押した日時」（K列）
+const COL_FINAL   = 12;   // 「コピーした文章」（L列）
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
@@ -32,16 +37,19 @@ function doPost(e) {
       sh.appendRow([
         new Date(), id,
         safe_(d.mode, 10), safe_(d.visit, 20), safe_(d.route, 200), safe_(d.items, 300),
-        safe_(d.points, 400), safe_(d.own, 200), safe_(d.text, 1000), '', '',
+        safe_(d.points, 400), safe_(d.own, 200), safe_(d.text, 1000), '押していない', '', '',
       ]);
     } else if (d.type === 'google') {
       const row = findRow_(sh, id);
       if (row) {
-        sh.getRange(row, COL_GOOGLE).setValue('✓');
+        sh.getRange(row, COL_GOOGLE).setValue('押した');
+        sh.getRange(row, COL_PRESSED).setValue(new Date());
         sh.getRange(row, COL_FINAL).setValue(safe_(d.text, 1000));
+        if (d.own) sh.getRange(row, COL_OWN).setValue(safe_(d.own, 200));   // 口コミ画面で書き足した一言
       } else {
         // アンケートをとばして口コミへ進んだ人
-        sh.appendRow([new Date(), id, '（アンケートなし）', '', '', '', '', '', '', '✓', safe_(d.text, 1000)]);
+        sh.appendRow([new Date(), id, '（アンケートなし）', '', '', '', '', safe_(d.own, 200), '',
+                      '押した', new Date(), safe_(d.text, 1000)]);
       }
     }
     return reply_('ok');
@@ -57,10 +65,11 @@ function getSheet_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sh = ss.getSheetByName(SHEET_NAME);
   if (!sh) sh = ss.insertSheet(SHEET_NAME);
-  if (sh.getLastRow() === 0) {
-    sh.appendRow(HEADERS);
+  // 見出し行がない・古い場合は書き直す（列を追加したときも自動で更新される）
+  const head = sh.getRange(1, 1, 1, HEADERS.length);
+  if (head.getValues()[0].join('|') !== HEADERS.join('|')) {
+    head.setValues([HEADERS]).setFontWeight('bold').setBackground('#d2d5ec');
     sh.setFrozenRows(1);
-    sh.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold').setBackground('#d2d5ec');
   }
   return sh;
 }
