@@ -94,6 +94,8 @@
     background: #fff; color: var(--navy); border: 2px dashed var(--line); border-radius: 12px; cursor: pointer;
   }
   [hidden] { display: none !important; }
+  .skip { text-align: center; margin: 4px 0 18px; font-size: 15px; }
+  .skip a { color: var(--muted); }
   .btn {
     display: block; width: 100%; padding: 19px; border: 0; border-radius: 14px;
     background: var(--navy); color: #fff; font-size: 20px; font-weight: bold;
@@ -121,59 +123,74 @@
 </header>
 
 <main>
-  <!-- ① お礼 -->
-  <section class="card">
-    <h2>本日はご来店<br>ありがとうございました</h2>
-    <p class="muted">
-      よろしければ、本日のご感想をGoogleマップに投稿していただけないでしょうか。
-      良かった点も、改善してほしい点も、率直なご意見がスタッフの励みと改善につながります。
-    </p>
-  </section>
+  <!-- ========== 画面1：アンケート ========== -->
+  <div id="screenSurvey">
+    <section class="card">
+      <h2>本日はご来店<br>ありがとうございました</h2>
+      <p class="muted">
+        サービス向上のため、簡単なアンケートにご協力ください（1分ほどで終わります）。
+        お名前などの個人情報はお聞きしません。
+      </p>
+    </section>
 
-  <!-- ② 書き方をえらぶ → 当てはまるものをタップ -->
-  <section class="card">
-    <h2><span class="num">1</span>書き方をえらぶ</h2>
-    <div class="modes">
-      <button type="button" class="mode" data-mode="short"><b>ひとことで</b><small>サッと一言だけ</small></button>
-      <button type="button" class="mode" data-mode="detail"><b>くわしく</b><small>体験をしっかり書く</small></button>
-    </div>
-    <p class="muted short-only" style="margin-top:12px"><b>品物</b>と、印象に残ったことを<b>1〜2個</b>タップしてください。文章なしで<b>星だけの投稿</b>もできます。</p>
-    <p class="muted detail-only" style="margin-top:12px">当てはまるものをタップすると下書きができます。ご自身の言葉で自由に書き換えてください。</p>
+    <section class="card">
+      <h2><span class="num">1</span>アンケート</h2>
+      <div class="label">答え方をえらぶ</div>
+      <div class="modes">
+        <button type="button" class="mode" data-mode="short"><b>かんたん</b><small>タップだけで</small></button>
+        <button type="button" class="mode" data-mode="detail"><b>くわしく</b><small>しっかり答える</small></button>
+      </div>
+      <p class="muted" style="margin-top:12px">当てはまるものをタップしてください。わからない項目はとばしてOKです。</p>
 
-    <div class="detail-only">
-      <div class="label">ご利用は</div>
-      <div class="chips" data-group="visit"></div>
-    </div>
+      <div class="detail-only">
+        <div class="label">ご利用は</div>
+        <div class="chips" data-group="visit"></div>
+      </div>
 
-    <div class="label">お売りいただいた品物 <small>（いくつでも）</small></div>
-    <div class="chips" data-group="item"></div>
+      <div class="label">何を見てご来店されましたか？ <small>（いくつでも）</small></div>
+      <div class="chips" data-group="route"></div>
 
-    <div class="label">印象に残ったこと <small class="short-only">（2つまで）</small><small class="detail-only">（いくつでも）</small></div>
-    <div class="chips grid" data-group="point"></div>
+      <div class="label">お売りいただいた品物 <small>（いくつでも）</small></div>
+      <div class="chips" data-group="item"></div>
 
-    <div class="detail-only">
-      <div class="label">あなたの言葉でひとこと <small>（任意）</small></div>
-      <p class="muted" style="margin:-4px 0 6px">例えば… <span id="ownQ"></span></p>
-      <input id="own" class="own" type="text" placeholder="思ったことを、そのまま一言どうぞ">
-    </div>
+      <div class="label">印象に残ったこと <small>（いくつでも）</small></div>
+      <div class="chips grid" data-group="point"></div>
 
-    <div class="label">ご感想（自由に編集できます）</div>
-    <textarea id="review" placeholder="ここに文章が入ります。もちろん、自由に書いてもOKです。"></textarea>
-    <button type="button" id="reroll" class="reroll">🔄 別の言い方にする</button>
-  </section>
+      <div class="detail-only">
+        <div class="label">あなたの言葉でひとこと <small>（任意）</small></div>
+        <p class="muted" style="margin:-4px 0 6px">例えば… <span id="ownQ"></span></p>
+        <input id="own" class="own" type="text" maxlength="200" placeholder="思ったことを、そのまま一言どうぞ">
+      </div>
 
-  <!-- ③ Googleへ -->
-  <section class="card">
-    <h2><span class="num">2</span>Googleで投稿する</h2>
-    <ol class="steps">
-      <li>下のボタンを押すと、文章がコピーされ、<b>Googleの投稿画面</b>が開きます</li>
-      <li><b>星の数</b>を選び、本文の欄を長押しして<b>「ペースト」</b></li>
-      <li><b>「投稿」</b>を押して完了です</li>
-    </ol>
-    <p style="margin:16px 0 0">
-      <a class="btn" id="goGoogle" href="#">Googleで口コミを書く</a>
-    </p>
-  </section>
+      <p style="margin:24px 0 0"><button type="button" class="btn" id="toReview">アンケートに答える</button></p>
+    </section>
+    <p class="skip"><a href="#" id="skip">アンケートをとばして口コミを書く</a></p>
+  </div>
+
+  <!-- ========== 画面2：Googleで口コミを書く ========== -->
+  <div id="screenReview" hidden>
+    <section class="card">
+      <h2>アンケートへのご協力<br>ありがとうございました</h2>
+      <p class="muted">よろしければ、Googleマップにも口コミを投稿していただけると、スタッフの励みになります。</p>
+    </section>
+
+    <section class="card">
+      <h2><span class="num">2</span>Googleで口コミを書く</h2>
+      <div class="label">投稿する文章 <small>（自由に書き換えてください）</small></div>
+      <textarea id="review" placeholder="ご自由にお書きください。文章なしで星だけの投稿もできます。"></textarea>
+      <button type="button" id="reroll" class="reroll">🔄 別の言い方にする</button>
+
+      <ol class="steps" style="margin-top:18px">
+        <li>下のボタンを押すと、文章がコピーされ、<b>Googleの投稿画面</b>が開きます</li>
+        <li><b>星の数</b>をご自身の感想のまま選び、本文の欄を長押しして<b>「ペースト」</b></li>
+        <li><b>「投稿」</b>を押して完了です</li>
+      </ol>
+      <p style="margin:16px 0 0">
+        <a class="btn" id="goGoogle" href="#">Googleで口コミを書く</a>
+      </p>
+    </section>
+    <p class="skip"><a href="#" id="back">← アンケートに戻る</a></p>
+  </div>
 </main>
 
 <footer>ご協力ありがとうございます。またのご来店をお待ちしております。</footer>
@@ -188,6 +205,24 @@ const CONFIG = {
   // Googleビジネスプロフィール管理画面の「口コミを依頼」で取得したURL
   // もしくは https://search.google.com/local/writereview?placeid=＜プレイスID＞
   reviewUrl: "https://g.page/r/CRv1XEL0wy6gEAE/review",
+  // アンケートの回答を記録するGoogleスプレッドシート（Apps Script のウェブアプリURL）
+  // 空のままなら送信しない。設定方法は README の「スプレッドシート連携」を参照
+  sheetUrl: "",
+  // 来店経路（複数選べる）
+  //   phrase: 「くわしく」モードの口コミ文に、ときどき入る一文（空なら文章には入れない）
+  routes: [
+    { label: "Googleマップ",      phrase: "Googleマップの口コミを見て行きました。" },
+    { label: "ネット検索",        phrase: "ネットで調べて見つけたお店です。" },
+    { label: "ホームページ",      phrase: "ホームページを見て行ってみました。" },
+    { label: "Instagram",         phrase: "インスタを見て行ってみました。" },
+    { label: "LINE",              phrase: "" },
+    { label: "テレビCM",          phrase: "CMで見て気になっていました。" },
+    { label: "チラシ",            phrase: "チラシを見て来店しました。" },
+    { label: "看板・通りがかり",  phrase: "前を通りかかって気になっていたお店です。" },
+    { label: "知人・家族の紹介",  phrase: "知り合いに紹介してもらって行きました。" },
+    { label: "以前から利用",      phrase: "" },
+    { label: "その他",            phrase: "" },
+  ],
   // ご利用回数（1つだけ選べる）
   visits: ["初めて", "2回目以上"],
   // 品物（複数選べる。「その他」は文章に品名を出さない）
@@ -220,7 +255,7 @@ const CONFIG = {
   points: [
     // --- 上位：お店として特に伝わってほしいこと ---
     { label: "説明が丁寧", rp: 6,
-      mids: ["査定の内容を一つずつ丁寧に説明していただき", "{it|品物}の査定額の理由をわかりやすく説明してくれて", "なぜこの金額なのかをきちんと説明してもらえて"],
+      mids: ["査定の内容を一つずつ丁寧に説明していただき", "{it+の|}査定額の理由をわかりやすく説明してくれて", "なぜこの金額なのかをきちんと説明してもらえて"],
       ends: ["査定の内容を一つずつ丁寧に説明していただけました", "査定額の理由をわかりやすく説明してくれました", "なぜこの金額なのか、きちんと説明してもらえて納得できました"],
       shorts: ["説明が丁寧でわかりやすかったです。", "査定の説明がすごく丁寧でした！", "金額の理由まで説明してくれて納得でした。"],
       recs: ["初めてでも納得して売れると思います。", "買取が初めての人にもいいと思います。"] },
@@ -231,8 +266,8 @@ const CONFIG = {
       recs: ["安心して相談できるお店です。"] },
     { label: "想像より高額", rp: 5,
       mids: ["思っていたより高い金額をつけていただき", "予想以上の金額になって", "想像していたより高く買い取ってもらえて"],
-      ends: ["思っていたより高い金額がついて嬉しかったです", "予想以上の金額になってびっくりしました", "{it|品物}を想像していたより高く買い取ってもらえました"],
-      shorts: ["{it|品物}が思ってたより高く売れて嬉しかったです！", "予想以上の金額でした。", "{it|品物}に想像より高値がついてびっくりしました。"],
+      ends: ["思っていたより高い金額がついて嬉しかったです", "予想以上の金額になってびっくりしました", "{it+を|}想像していたより高く買い取ってもらえました"],
+      shorts: ["{it+が|}思ってたより高く売れて嬉しかったです！", "予想以上の金額でした。", "{it+に|}想像より高値がついてびっくりしました。"],
       recs: ["迷っている物があるなら一度見てもらうといいと思います。", "売るか迷っている人は一度査定してもらうといいです。"] },
     { label: "壊れた物も買取", rp: 1,
       mids: ["壊れて使えなくなった{it|物}まで買い取っていただき", "壊れている{it|物}でも値段をつけてくれて", "動かなくなった物まで買い取ってもらえて"],
@@ -292,8 +327,8 @@ const CONFIG = {
       recs: ["古い物でも諦めずに一度見てもらうといいと思います。"] },
     { label: "他店より高い", rp: 5.5,
       mids: ["他のお店よりも高い金額を提示していただき", "他店より高い金額を出してくれて", "よそで聞いた金額より高くて"],
-      ends: ["他のお店よりも高い金額を提示していただけました", "{it|品物}に他店より高い金額を出してくれました", "よそで聞いた金額より高くて驚きました"],
-      shorts: ["他のお店より高かったです！", "{it|品物}がよそより高く売れました。", "他店と比べてこちらが高かったです。"],
+      ends: ["他のお店よりも高い金額を提示していただけました", "{it+に|}他店より高い金額を出してくれました", "よそで聞いた金額より高くて驚きました"],
+      shorts: ["他のお店より高かったです！", "{it+が|}よそより高く売れました。", "他店と比べてこちらが高かったです。"],
       recs: ["どこに売るか迷っているなら比べてみるといいです。"] },
     // --- 下位：お店の環境 ---
     { label: "待ち時間が短い", rp: 14,
@@ -345,7 +380,8 @@ function reroll() {
     shortClosing:   pick(["また来ます！", "ありがとうございました。", "また利用します。", "", ""]),
     shortItem:      pick(["{items}を売りました。", "{items}の買取でお世話になりました。", "{items}を買い取ってもらいました。", "{items}の買取で利用しました。"]),
     swapShort:      Math.random() < 0.5,
-    useRec:         Math.random() < 0.5,   // 「これから来る人へ」は半分の確率でだけ入れる（毎回入ると宣伝っぽくなる）
+    useRec:         Math.random() < 0.5,
+    useRoute:       Math.random() < 0.6,   // 来店経路の一文も、毎回は入れない   // 「これから来る人へ」は半分の確率でだけ入れる（毎回入ると宣伝っぽくなる）
   };
   V = {};
   CONFIG.items.forEach(it => { V["item:" + it.label] = pick(it.words.length ? it.words : [""]); });
@@ -365,12 +401,13 @@ function joinItems(list) {
 const itemWords = sel => sel.item.filter(x => x !== "その他").map(l => V["item:" + l]);
 
 // {it|代わりの言葉} を埋める。品物が1つだけ選ばれていればその言葉、それ以外は代わりの言葉。
+// {it+が|} のように書くと「時計が」、品物名を使わない時は何も入れない（「品物が〜」の不自然さを避ける）
 // 同じ品物名を何度も繰り返すと不自然（キーワードの詰め込み）なので、本文中で使うのは1回まで
 let usedIt = false;
 function fill(t, sel) {
   const ws = itemWords(sel);
-  return t.replace(/\{it\|([^}]*)\}/g, (_, fb) => {
-    if (ws.length === 1 && !usedIt) { usedIt = true; return ws[0]; }
+  return t.replace(/\{it(?:\+([^|}]*))?\|([^}]*)\}/g, (_, suffix, fb) => {
+    if (ws.length === 1 && !usedIt) { usedIt = true; return ws[0] + (suffix || ""); }
     return fb;
   });
 }
@@ -393,7 +430,7 @@ function joinPoints(labels) {
 // 文末に句読点がなければ「。」をつける
 const endPunct = t => (t && !/[。！!？?♪）)」]$/.test(t)) ? t + "。" : t;
 
-// ひとことモード：選んだ項目（最大2つ）の短い一文だけ
+// かんたんモード：選んだ項目のうち、最初に押した2つの短い一文だけ（アンケートには全部記録される）
 // 品物を選んでいれば、その言葉（貴金属・時計など）が必ず文章に入る
 function buildShort(sel) {
   const labels = sel.point.slice(0, 2);
@@ -422,6 +459,10 @@ function buildDetail(sel, own) {
     opening = first ? W.firstOnly : W.repeatOnly;
   }
 
+  // 来店経路：最初に選んだものの一文を、書き出しの前に（ときどき）
+  const r = CONFIG.routes.find(x => x.label === sel.route[0]);
+  if (r && r.phrase && W.useRoute) opening = r.phrase + opening;
+
   // 選んだ順に並べる（人によって順番が変わるので、文章の形もばらける）
   const labels = sel.point;
   let body = joinPoints(labels);
@@ -440,7 +481,7 @@ function buildDetail(sel, own) {
 document.getElementById("storeName").textContent = CONFIG.storeName;
 const textarea = document.getElementById("review");
 const ownInput = document.getElementById("own");
-const selected = { visit: "", item: [], point: [] };
+const selected = { visit: "", route: [], item: [], point: [] };
 let mode = "short";
 let lastGenerated = "";
 
@@ -487,8 +528,6 @@ function makeChips(group, labels, single) {
         if (list.includes(label)) list.splice(list.indexOf(label), 1);
         else {
           list.push(label);
-          // ひとことモードは2つまで。3つ目を押したら一番古いものを外す
-          if (group === "point" && mode === "short" && list.length > 2) list.shift();
         }
         if (group === "point") updatePointChips(); else b.classList.toggle("on", list.includes(label));
       }
@@ -503,7 +542,6 @@ function setMode(m) {
   document.querySelectorAll(".mode").forEach(b => b.classList.toggle("on", b.dataset.mode === m));
   document.querySelectorAll(".detail-only").forEach(el => el.hidden = m !== "detail");
   document.querySelectorAll(".short-only").forEach(el => el.hidden = m !== "short");
-  if (m === "short" && selected.point.length > 2) { selected.point = selected.point.slice(0, 2); updatePointChips(); }
   refresh();
 }
 document.querySelectorAll(".mode").forEach(b => b.onclick = () => setMode(b.dataset.mode));
@@ -511,14 +549,64 @@ document.getElementById("reroll").onclick = () => { reroll(); refresh(); };
 
 reroll();
 makeChips("visit", CONFIG.visits, true);
+makeChips("route", CONFIG.routes.map(r => r.label));
 makeChips("item",  CONFIG.items.map(i => i.label));
 makeChips("point", CONFIG.points.map(p => p.label));
 setMode("short");
+history.replaceState({ screen: "survey" }, "");
+
+/* ---- スプレッドシートへ送信 ----
+   ・Apps Script は別サイト（script.google.com）なので、ブラウザの制約を避けるため
+     mode:"no-cors" ＋ text/plain で送る（返事は読めないが、記録はされる）
+   ・送信の成否で画面を止めない（お客様を待たせない） */
+const answerId = Array.from(crypto.getRandomValues(new Uint8Array(8)), b => b.toString(16).padStart(2, "0")).join("");
+function send(data) {
+  if (!CONFIG.sheetUrl) return;
+  try {
+    fetch(CONFIG.sheetUrl, {
+      method: "POST", mode: "no-cors", keepalive: true,
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ id: answerId, ...data }),
+    });
+  } catch (_) { /* 送れなくても画面は進める */ }
+}
+
+/* ---- 画面の切り替え ---- */
+const screenSurvey = document.getElementById("screenSurvey");
+const screenReview = document.getElementById("screenReview");
+function show(name, push) {
+  screenSurvey.hidden = name !== "survey";
+  screenReview.hidden = name !== "review";
+  window.scrollTo(0, 0);
+  if (name === "review") fitHeight();
+  if (push) history.pushState({ screen: name }, "");
+}
+window.addEventListener("popstate", e => show((e.state && e.state.screen) || "survey", false));
+
+document.getElementById("toReview").onclick = () => {
+  const answered = selected.visit || selected.route.length || selected.item.length || selected.point.length || ownInput.value.trim();
+  if (answered) {
+    send({
+      type: "survey",
+      mode: mode === "short" ? "かんたん" : "くわしく",
+      visit: selected.visit,
+      route: selected.route.join("、"),
+      items: selected.item.join("、"),
+      points: selected.point.join("、"),
+      own: ownInput.value.trim(),
+      text: textarea.value.trim(),
+    });
+  }
+  show("review", true);
+};
+document.getElementById("skip").onclick = e => { e.preventDefault(); show("review", true); };
+document.getElementById("back").onclick = e => { e.preventDefault(); history.back(); };
 
 /* ---- Googleへ ---- */
 const toast = document.getElementById("toast");
 document.getElementById("goGoogle").onclick = async (e) => {
   e.preventDefault();
+  send({ type: "google", text: textarea.value.trim() });   // 「Googleへ進んだ」を記録
   const text = textarea.value.trim();
   if (text) {
     try {
